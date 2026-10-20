@@ -350,11 +350,16 @@ export function createSentinel() {
     rig.add(result);
     return result;
   }
-  const links = instances(tubeGeometry, chrome, total);
+  // Repeated collars need dark metal, not the head's exposed silver hardware.
+  const tentacleMetal = chrome.clone();
+  tentacleMetal.color.set(0x303234);
+  const tentacleHardware = steel.clone();
+  tentacleHardware.color.set(0x444647);
+  const links = instances(tubeGeometry, tentacleMetal, total);
   links.name = 'Arm vertebrae';
   const jointGeometry = new THREE.SphereGeometry(1, 8, 6);
   const joints = instances(jointGeometry, rubber, total + tentacleCount);
-  const cuffs = instances(tubeGeometry, steel, total);
+  const cuffs = instances(tubeGeometry, tentacleHardware, total);
   // Small recessed red windows, separated by unlit mechanical vertebrae.
   const lightParts = Array.from({ length: 3 }, (_, i) =>
     new THREE.CylinderGeometry(1, 1, 1, 6, 1, true, i * Math.PI * 2 / 3, Math.PI * .45));
@@ -367,9 +372,9 @@ export function createSentinel() {
   runningLights.name = 'Tentacle running lights';
   const cables = instances(tubeGeometry, rubber, total * 2);
   const clawGeometry = new THREE.CylinderGeometry(.55, 1, 1, 4);
-  const claws = instances(clawGeometry, steel, tentacleCount * 6);
+  const claws = instances(clawGeometry, tentacleHardware, tentacleCount * 6);
   claws.name = 'Articulated grippers';
-  const jointCaps = instances(jointGeometry, steel, total * 2);
+  const jointCaps = instances(jointGeometry, tentacleHardware, total * 2);
   // Three staggered pairs of folded, blade-like tools under the chin.
   const armCount = 6;
   const armPlateGeometry = new THREE.CylinderGeometry(.65, 1, 1, 4)

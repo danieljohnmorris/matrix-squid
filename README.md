@@ -16,6 +16,8 @@ Each Sentinel has a sculpted mechanical head, fifteen segmented tentacles, artic
 
 Swimmers follow world-space routes with collision-avoidance steering. Staggered close passes and distant patrols provide depth; orbiting the camera does not reposition the swarm. Grey fog softens the distance, while directional lights and neutral environment reflections reveal the metal. Subdued red running lights follow the simulated tentacle segments.
 
+Tentacle vertebrae, collars, joint caps and claws use darker gunmetal than the head hardware, retaining lighting-driven highlights without continuous silver bands.
+
 The six small underside manipulators are separate hinged tools: flattened links, exposed parallel actuators and hooked pincers. They normally fold beneath the chin, occasionally reaching or hanging in staggered pairs rather than paddling with the propulsion stroke.
 
 ## Controls

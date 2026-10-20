@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Give tentacle vertebrae, collars, joint caps and claws dedicated dark-gunmetal materials instead of sharing bright head hardware; preserve lighting, fog and red running-light intensity.
 - Rename the project and repository to `matrix-squid`, serve it at `matrix-squid.danieljohnmorris.com`, and permanently redirect the previous plural host from the container.
 - Add a README screenshot of deployed sensor dishes and probes beside a closer coasting Sentinel and distant patrol, using the live scene's lighting, metal materials and grey depth fog.
 - Rebuild the six underside manipulators as folded, flattened linkages with hinge barrels, parallel actuators and hooked pincers; replace continuous dangling motion with staggered, eased reaches.
