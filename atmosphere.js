@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 
 export function createAtmosphere(scene) {
-  // A lighter extinction colour leaves distant silhouettes visible, not blacked out.
-  scene.fog = new THREE.FogExp2(0x303030, .021);
+  // Distance removes light; the background haze must not paint distant metal grey.
+  scene.fog = new THREE.FogExp2(0x000000, .021);
   const uniforms = {
     time: { value: 0 },
-    haze: { value: scene.fog.color },
+    haze: { value: new THREE.Color(0x242424) },
   };
   const material = new THREE.ShaderMaterial({
     uniforms,
@@ -43,7 +43,7 @@ export function createAtmosphere(scene) {
         float layers = .65 * noise(p + vec2(drift, -drift * .7))
           + .35 * noise(p * 2.3 + vec2(-drift * .6, drift));
         float veil = smoothstep(.2, .8, layers);
-        gl_FragColor = vec4(haze * mix(.25, 1.15, veil), 1.0);
+        gl_FragColor = vec4(haze * mix(.25, .85, veil), 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }

@@ -4,7 +4,7 @@ A procedural Three.js swarm inspired by the Sentinels from *The Matrix*: articul
 
 **[Open the live demo](https://matrix-squid.danieljohnmorris.com)**
 
-![A Sentinel deploying sensor dishes and probes beside a closer coasting Sentinel, with a distant patrol fading into grey fog.](public/screenshots/matrix-squid.png)
+![A Sentinel deploying sensor dishes and probes beside a closer coasting Sentinel against subtle charcoal haze.](public/screenshots/matrix-squid.png)
 
 ## The scene
 
@@ -30,7 +30,7 @@ Population scales with viewport width, including fullscreen and live resizing:
 
 Roaming width also follows the viewport aspect ratio, spreading the swarm across ultrawide displays while keeping portrait roaming narrower. Existing swimmers retain their positions when resizing; they steer gradually into the updated volumes. Removed swimmers release their procedural geometry and materials; new swimmers share the existing baked metal maps.
 
-Grey exponential depth fog fades distant swimmers into silhouettes. A slowly drifting, procedural monochrome backdrop adds broad patches of haze without particles or a screen-space overlay. Directional lights and neutral environment reflections reveal the metal; subdued red running lights follow the simulated tentacle segments.
+Distance fog attenuates light toward black, keeping far swimmers dark rather than tinting them grey. A slowly drifting procedural backdrop adds subtle charcoal haze without particles or a screen-space overlay; it does not illuminate the squid. Directional lights and neutral environment reflections reveal the metal; subdued red running lights follow the simulated tentacle segments.
 
 Tentacle vertebrae, collars, joint caps and claws use darker gunmetal than the head hardware, retaining lighting-driven highlights without continuous silver bands.
 
