@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Replace text controls with stateful pause/play and fullscreen icons plus the GitHub logo, retaining accessible labels, tooltips and 44px targets.
+- Add vgpu-baked brushed-metal roughness and normal maps, neutral reflection lighting and tone mapping; preserve dark gunmetal between lit highlights.
+- Keep tentacle running lights as subdued red accents, dimmer than the optical lenses.
 - Add spaced emissive red windows along all fifteen tentacles, attached to their simulated segments rather than a separate animation.
 - Let the jaw manipulators alternate between reaching and hanging beneath the head, with staggered shoulders and wrists.
 - Soften distal tentacle springs during swimming and sensing, and propagate propulsion opening/contraction from root to tip without resetting particle velocity.
@@ -42,3 +45,5 @@
 - Drag-to-orbit, scroll/pinch-to-zoom, pause/resume, reduced-motion support and hidden-tab suspension.
 
 Run `npm ci` then `npm run dev`. Run `npm test` for coasting, turn-radius, curved-trail transition, sensing/propulsion inertia and optical-lens visibility regressions. Build static deployment files with `npm run build`; output is `dist/`. The Dockerfile serves the production build on port 80.
+
+Run `npm run bake:metal` on a WebGPU-capable development machine to regenerate the checked-in textures from `scripts/metal.wgsl` using vgpu. Normal builds and browsers use the baked PNGs and do not require WebGPU.

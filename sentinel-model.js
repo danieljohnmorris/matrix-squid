@@ -362,7 +362,7 @@ export function createSentinel() {
   lightParts.forEach(geometry => geometry.dispose());
   const lightsPerArm = Math.ceil(segments / 3);
   const runningLights = instances(runningLightGeometry, new THREE.MeshStandardMaterial({
-    color: 0x8c0803, emissive: 0xff1906, emissiveIntensity: 2.2, roughness: .35,
+    color: 0x8c0803, emissive: 0xff1906, emissiveIntensity: .35, roughness: .35,
   }), tentacleCount * lightsPerArm);
   runningLights.name = 'Tentacle running lights';
   const cables = instances(tubeGeometry, rubber, total * 2);

@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { createSentinel } from "./sentinel-model.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { createSwimMotion } from "./swim-motion.js";
+import { applyMetalFinish } from "./metal-finish.js";
 const fullscreen = document.getElementById("fullscreen");
 fullscreen.hidden = !document.fullscreenEnabled;
 fullscreen.addEventListener("click", async () => {
@@ -13,7 +14,11 @@ fullscreen.addEventListener("click", async () => {
   }
 });
 document.addEventListener("fullscreenchange", () => {
-  fullscreen.textContent = document.fullscreenElement ? "Exit fullscreen" : "Fullscreen";
+  const active = !!document.fullscreenElement;
+  const label = active ? "Exit fullscreen" : "Fullscreen";
+  fullscreen.setAttribute("aria-label", label);
+  fullscreen.title = label;
+  fullscreen.setAttribute("aria-pressed", String(active));
 });
 function mountSentinels() {
   const host = document.getElementById("sentinel-background");
@@ -29,6 +34,8 @@ function mountSentinels() {
     return;
   }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = .85;
   host.append(renderer.domElement);
   const scene = new THREE.Scene;
   scene.background = new THREE.Color(0x101010);
@@ -40,11 +47,11 @@ function mountSentinels() {
   controls.maxDistance = 75;
   controls.enablePan = false;
   controls.addEventListener("change", () => renderer.render(scene, camera));
-  scene.add(new THREE.HemisphereLight(13165551, 2433836, 3));
-  const light = new THREE.DirectionalLight(13032681, 5);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x202020, .35));
+  const light = new THREE.DirectionalLight(0xffffff, 2);
   light.position.set(-5, 8, 12);
   scene.add(light);
-  const rim = new THREE.DirectionalLight(10268347, 3);
+  const rim = new THREE.DirectionalLight(0xffffff, 1.2);
   rim.position.set(8, -3, -5);
   scene.add(rim);
   // World-space passes, not a point to orbit or a camera-attached formation.
@@ -81,6 +88,7 @@ function mountSentinels() {
     const heading = route ? route.getTangentAt(progress) : null;
     return { ...sentinel, guide, route, routeLength, swim: createSwimMotion(sentinel.group.position, Math.random, heading) };
   });
+  const disposeMetalFinish = applyMetalFinish(scene, renderer, () => renderer.render(scene, camera));
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   let paused = reduced.matches;
   let elapsed = 0;
@@ -157,7 +165,9 @@ function mountSentinels() {
   }
   function syncMotion() {
     cancelAnimationFrame(frame);
-    button.textContent = paused ? "Resume sentinels" : "Pause sentinels";
+    const label = paused ? "Resume sentinels" : "Pause sentinels";
+    button.setAttribute("aria-label", label);
+    button.title = label;
     button.setAttribute("aria-pressed", String(paused));
     if (!paused && !document.hidden) {
       last = performance.now();
@@ -208,6 +218,7 @@ function mountSentinels() {
     });
     geometries.forEach((geometry) => geometry.dispose());
     materials.forEach((material) => material.dispose());
+    disposeMetalFinish();
     renderer.dispose();
   }, { once: true });
 }
