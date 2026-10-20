@@ -3,13 +3,15 @@
 ## Unreleased
 
 - Rename the project and repository to `matrix-squid`, serve it at `matrix-squid.danieljohnmorris.com`, and permanently redirect the previous plural host from the container.
-- Add a README screenshot of a close Sentinel deploying its sensor dishes and probes, with a second swimmer behind.
+- Add a README screenshot of deployed sensor dishes and probes beside a closer coasting Sentinel, using the live scene's lighting and metal materials.
+- Rebuild the six underside manipulators as folded, flattened linkages with hinge barrels, parallel actuators and hooked pincers; replace continuous dangling motion with staggered, eased reaches.
+- Explicitly match the singular nginx host and make it the default server, avoiding a self-redirect after the rename.
 
 - Replace text controls with stateful pause/play and fullscreen icons plus the GitHub logo, retaining accessible labels, tooltips and 44px targets.
 - Add vgpu-baked brushed-metal roughness and normal maps, neutral reflection lighting and tone mapping; preserve dark gunmetal between lit highlights.
 - Keep tentacle running lights as subdued red accents, dimmer than the optical lenses.
 - Add spaced emissive red windows along all fifteen tentacles, attached to their simulated segments rather than a separate animation.
-- Let the jaw manipulators alternate between reaching and hanging beneath the head, with staggered shoulders and wrists.
+- Animate the jaw manipulators independently of the main tentacle propulsion and sensing poses.
 - Soften distal tentacle springs during swimming and sensing, and propagate propulsion opening/contraction from root to tip without resetting particle velocity.
 - Stagger close world-space patrols and retain a distant patrol for depth; rejoin ahead of the nearest route point after avoidance rather than orbiting a missed waypoint. Camera orbit never moves swimmers or their destinations.
 - Group Pause/Resume, Fullscreen and the public GitHub link in one responsive top-right control cluster.

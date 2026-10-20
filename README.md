@@ -4,7 +4,7 @@ A procedural Three.js swarm inspired by the Sentinels from *The Matrix*: articul
 
 **[Open the live demo](https://matrix-squid.danieljohnmorris.com)**
 
-![A close Sentinel with deployed sensor dishes and probes, with another swimming farther behind.](public/screenshots/matrix-squid.png)
+![A Sentinel deploying sensor dishes and probes beside a closer coasting Sentinel.](public/screenshots/matrix-squid.png)
 
 ## The scene
 
@@ -15,6 +15,8 @@ Each Sentinel has a sculpted mechanical head, fifteen segmented tentacles, artic
 - **Sense:** the swimmer slows to a stop, looks around and deploys sensor probes and dishes; the tentacles settle rather than rotating rigidly with the head.
 
 Swimmers follow world-space routes with collision-avoidance steering. Staggered close passes and distant patrols provide depth; orbiting the camera does not reposition the swarm. Grey fog softens the distance, while directional lights and neutral environment reflections reveal the metal. Subdued red running lights follow the simulated tentacle segments.
+
+The six small underside manipulators are separate hinged tools: flattened links, exposed parallel actuators and hooked pincers. They normally fold beneath the chin, occasionally reaching or hanging in staggered pairs rather than paddling with the propulsion stroke.
 
 ## Controls
 

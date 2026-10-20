@@ -370,18 +370,28 @@ export function createSentinel() {
   const claws = instances(clawGeometry, steel, tentacleCount * 6);
   claws.name = 'Articulated grippers';
   const jointCaps = instances(jointGeometry, steel, total * 2);
-  // Keep the jaw manipulators out of the rigid carapace batch.
+  // Three staggered pairs of folded, blade-like tools under the chin.
   const armCount = 6;
-  const upperArms = instances(tubeGeometry, chrome, armCount);
+  const armPlateGeometry = new THREE.CylinderGeometry(.65, 1, 1, 4)
+    .rotateY(Math.PI / 4).scale(1.6, 1, .5);
+  const armHingeGeometry = new THREE.CylinderGeometry(1, 1, 1.4, 12)
+    .rotateZ(Math.PI / 2);
+  const upperArms = instances(armPlateGeometry, chrome, armCount);
   upperArms.name = 'Jaw upper arms';
-  const forearms = instances(tubeGeometry, steel, armCount * 3);
-  forearms.name = 'Jaw forearms and pincers';
-  const armJoints = instances(jointGeometry, steel, armCount * 3);
-  armJoints.name = 'Jaw joints';
+  const forearms = instances(armPlateGeometry, armor, armCount);
+  forearms.name = 'Jaw forearm plates';
+  const armJoints = instances(armHingeGeometry, steel, armCount * 3);
+  armJoints.name = 'Jaw hinge barrels';
+  const armLinkages = instances(tubeGeometry, steel, armCount * 2);
+  armLinkages.name = 'Jaw parallel linkages';
+  const fingers = instances(armPlateGeometry, chrome, armCount * 4);
+  fingers.name = 'Jaw hooked pincers';
   const armRoot = new THREE.Vector3();
   const armElbow = new THREE.Vector3();
   const armWrist = new THREE.Vector3();
+  const armKnuckle = new THREE.Vector3();
   const armTip = new THREE.Vector3();
+  const armOffset = new THREE.Vector3();
   const forearmDirection = new THREE.Vector3();
   const wristRotation = new THREE.Quaternion();
   const sensors = createSensorHardware(rig, { chrome, steel, eyeMaterial }, tentacleCount);
@@ -531,46 +541,69 @@ export function createSentinel() {
     }
   }
   function updateManipulators(time) {
+    // Hold folded poses between deliberate adjustments. Elbows follow the
+    // shoulder slightly later; the tools do not paddle or open with the tail.
     for (let i = 0; i < armCount; i++) {
       const side = i % 2 ? 1 : -1;
       const pair = Math.floor(i / 2);
-      const phase = i * 1.7;
-      const hanging = THREE.MathUtils.smoothstep(Math.sin(time * .23 + pair * .8), -.55, .55);
-      const shoulder = THREE.MathUtils.lerp(.65, .22, hanging) + .12 * Math.sin(time * .85 + phase);
-      const yaw = .45 + .13 * Math.sin(time * .54 + phase);
-      const upperLength = .7 + pair * .07;
-      armRoot.set(side * .42, -.42, .38 - pair * .36);
+      const phase = pair * 8.3 + (side > 0 ? 1.1 : 0);
+      const cycle = (time + phase) % 38;
+      const elbowCycle = (time + phase + 37.65) % 38;
+      const reach = THREE.MathUtils.smoothstep(cycle, 21, 24)
+        * (1 - THREE.MathUtils.smoothstep(cycle, 27, 31));
+      const follow = THREE.MathUtils.smoothstep(elbowCycle, 21, 24)
+        * (1 - THREE.MathUtils.smoothstep(elbowCycle, 27, 31));
+      const extension = reach * .7 + motion.sensing * .18;
+      const elbowExtension = follow * .7 + motion.sensing * .18;
+      const adjustment = .035 * Math.sin(time * .8 + i * 2.1);
+      const shoulderPitch = -.34 - extension * .65 + adjustment;
+      const forearmPitch = -.12 - elbowExtension * 1.05 - adjustment;
+      const upperLength = .66 + pair * .07;
+      const lowerLength = .58 + pair * .08;
+      armRoot.set(side * (.47 + pair * .10), -.46, .72 - pair * .48);
       armElbow.set(
-        side * Math.sin(shoulder) * Math.cos(yaw),
-        -Math.cos(shoulder),
-        Math.sin(shoulder) * Math.sin(yaw),
-      ).multiplyScalar(upperLength).add(armRoot);
-
-      const wristYaw = side * (-.32 + .2 * Math.sin(time * .72 + phase + .6));
-      const wristPitch = THREE.MathUtils.lerp(-.16, -1.23, hanging) + .13 * Math.cos(time * .92 + phase);
+        side * (.14 + extension * .09),
+        Math.sin(shoulderPitch),
+        -Math.cos(shoulderPitch),
+      ).normalize().multiplyScalar(upperLength).add(armRoot);
       forearmDirection.set(
-        Math.sin(wristYaw) * Math.cos(wristPitch),
-        Math.sin(wristPitch),
-        Math.cos(wristYaw) * Math.cos(wristPitch),
-      );
-      armWrist.copy(armElbow).addScaledVector(forearmDirection, .66 + pair * .04);
-      placeLink(upperArms, i, armRoot, armElbow, .07);
-      placeLink(forearms, i * 3, armElbow, armWrist, .045);
-      placeBall(armJoints, i * 3, armRoot, .075);
-      placeBall(armJoints, i * 3 + 1, armElbow, .09);
-      placeBall(armJoints, i * 3 + 2, armWrist, .045);
+        side * (.05 + elbowExtension * .14),
+        Math.sin(forearmPitch),
+        Math.cos(forearmPitch),
+      ).normalize();
+      armWrist.copy(armElbow).addScaledVector(forearmDirection, lowerLength);
+      placeLink(upperArms, i, armRoot, armElbow, .10);
+      placeLink(forearms, i, armElbow, armWrist, .085);
+      placeBall(armJoints, i * 3, armRoot, .10);
+      placeBall(armJoints, i * 3 + 1, armElbow, .105);
+      placeBall(armJoints, i * 3 + 2, armWrist, .065);
+
+      // Exposed parallel actuator gives the open mechanical silhouette.
+      armOffset.set(side * .10, -.055, .015);
+      armKnuckle.copy(armRoot).add(armOffset);
+      armTip.copy(armElbow).add(armOffset);
+      placeLink(armLinkages, i * 2, armKnuckle, armTip, .022);
+      armKnuckle.copy(armElbow).add(armOffset);
+      armTip.copy(armWrist).add(armOffset);
+      placeLink(armLinkages, i * 2 + 1, armKnuckle, armTip, .018);
 
       wristRotation.setFromUnitVectors(forward, forearmDirection);
-      const opening = .055 + .02 * Math.sin(time * 1.1 + phase);
+      const opening = .065 + reach * .065;
       for (let prong = 0; prong < 2; prong++) {
-        armTip.set((prong ? 1 : -1) * opening, -.04, .2)
+        const sign = prong ? 1 : -1;
+        armKnuckle.set(sign * opening, -.035, .19)
           .applyQuaternion(wristRotation).add(armWrist);
-        placeLink(forearms, i * 3 + 1 + prong, armWrist, armTip, .017);
+        armTip.set(sign * opening * .32, -.065, .29)
+          .applyQuaternion(wristRotation).add(armWrist);
+        placeLink(fingers, i * 4 + prong * 2, armWrist, armKnuckle, .037);
+        placeLink(fingers, i * 4 + prong * 2 + 1, armKnuckle, armTip, .025);
       }
     }
     upperArms.instanceMatrix.needsUpdate = true;
     forearms.instanceMatrix.needsUpdate = true;
     armJoints.instanceMatrix.needsUpdate = true;
+    armLinkages.instanceMatrix.needsUpdate = true;
+    fingers.instanceMatrix.needsUpdate = true;
   }
   function update(timeSeconds, alertAmount, signalAmount) {
     const alert = Math.min(1, Math.max(0, alertAmount));
