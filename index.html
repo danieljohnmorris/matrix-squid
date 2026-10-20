@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#080b10" />
+  <meta name="description" content="A procedural Three.js Sentinel swarm. Coast, propel and sense." />
+  <title>Matrix Squids</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #080b10; color: #d5dce5; }
+    body { margin: 0; overflow: hidden; }
+    #sentinel-background { position: fixed; inset: 0; }
+    canvas { display: block; width: 100%; height: 100%; }
+    .controls { position: fixed; top: max(24px, env(safe-area-inset-top)); right: max(24px, env(safe-area-inset-right)); display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; max-width: calc(100% - 48px); }
+    .controls > * { box-sizing: border-box; min-height: 44px; padding: 10px 16px; border: 1px solid #ffffff30; border-radius: 6px; background: #080b10cc; color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
+    .controls > *:hover { border-color: #ffffff70; }
+    .controls > *:focus-visible { outline: 2px solid #d5dce5; outline-offset: 4px; }
+    .controls a { display: inline-flex; align-items: center; text-decoration: none; }
+    .hint { position: fixed; bottom: max(24px, env(safe-area-inset-bottom)); left: max(24px, env(safe-area-inset-left)); margin: 0; color: #8f9aa9; font-size: 12px; pointer-events: none; }
+    #status { position: fixed; inset: 40% 24px auto; text-align: center; }
+  </style>
+</head>
+<body>
+  <main aria-label="Animated Sentinel squid swarm"><div id="sentinel-background" aria-hidden="true"></div></main>
+  <p id="status" role="status"></p>
+  <nav class="controls" aria-label="Scene controls">
+    <button id="sentinel-motion" type="button" hidden>Pause sentinels</button>
+    <button id="fullscreen" type="button" hidden>Fullscreen</button>
+    <a href="https://github.com/danieljohnmorris/matrix-squids" target="_blank" rel="noopener noreferrer" aria-label="Matrix Squids on GitHub (opens in a new tab)">GitHub</a>
+  </nav>
+  <p class="hint">Drag to orbit · Scroll or pinch to zoom</p>
+  <noscript>Enable JavaScript to view the Sentinel swarm.</noscript>
+  <script type="module" src="/main.js"></script>
+</body>
+</html>
