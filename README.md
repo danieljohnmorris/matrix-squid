@@ -4,7 +4,7 @@ A procedural Three.js swarm inspired by the Sentinels from *The Matrix*: articul
 
 **[Open the live demo](https://matrix-squid.danieljohnmorris.com)**
 
-![A Sentinel deploying sensor dishes and probes beside a closer coasting Sentinel.](public/screenshots/matrix-squid.png)
+![A Sentinel deploying sensor dishes and probes beside a closer coasting Sentinel, with a distant patrol fading into grey fog.](public/screenshots/matrix-squid.png)
 
 ## The scene
 
