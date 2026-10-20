@@ -2,7 +2,7 @@
 
 A procedural Three.js swarm inspired by the Sentinels from *The Matrix*: articulated mechanical tentacles, red optics, dark metal and autonomous movement through a foggy 3D space.
 
-**[Open the live demo](https://matrix-squid.danieljohnmorris.com)**
+**[Open the live demo](https://matrix-squid.danieljohnmorris.com)** · **[Install as an Omarchy (Hyprland) screensaver](#omarchy-screensaver-plugin)**
 
 ![A Sentinel deploying sensor dishes and probes beside a closer coasting Sentinel against subtle charcoal haze.](public/screenshots/matrix-squid.png)
 
