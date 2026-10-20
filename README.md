@@ -50,6 +50,32 @@ The six small underside manipulators are separate hinged tools: flattened links,
 
 The scene respects reduced-motion preferences and suspends animation while the tab is hidden. Icon controls retain accessible labels and tooltips.
 
+## Omarchy screensaver plugin
+
+The repository root is also an [Omarchy](https://omarchy.org/) shell plugin that replaces the idle screensaver with this swarm, one fullscreen window per monitor.
+
+```sh
+omarchy plugin add https://github.com/danieljohnmorris/matrix-squid.git --enable
+```
+
+It follows the existing `idle.screensaver` timing in `~/.config/omarchy/shell.json` and Omarchy's skip rules: stay awake, `omarchy toggle screensaver` and a locked session. Any key, click, scroll or pointer movement exits; so does locking. Lock timing is unchanged.
+
+Start it immediately with:
+
+```sh
+omarchy-shell matrix-squid launch
+```
+
+Omarchy has no screensaver hook, so the plugin starts one second before the built-in screensaver and uses its `org.omarchy.screensaver` window class: Omarchy's fullscreen window rules apply, and its terminal screensaver sees one already running and stays closed. *System > Screensaver* still opens the terminal screensaver.
+
+Dependencies, all in Omarchy's base install: `python-gobject` and WebKitGTK (`webkit2gtk-4.1`, pulled in by `aether`) with WebGL hardware acceleration. The plugin needs no network access, build step or privileges; it renders the committed `screensaver/` bundle. After changing the scene, rebuild it with `npm run build:screensaver` and commit the result.
+
+Remove it with:
+
+```sh
+omarchy plugin remove io.github.danieljohnmorris.matrix-squid
+```
+
 ## Run locally
 
 Use Node.js 22 and npm, plus a browser with WebGL and hardware acceleration enabled.
@@ -95,6 +121,9 @@ This replaces `public/textures/metal-roughness.png` and `public/textures/metal-n
 | `scripts/metal.wgsl` | Procedural metal texture shader |
 | `scripts/bake-metal.mjs` | Headless vgpu texture generation |
 | `index.html` | Full-window canvas host and accessible icon controls |
+| `manifest.json`, `Service.qml` | Omarchy shell plugin: idle trigger and `matrix-squid` IPC target |
+| `bin/matrix-squid-screensaver` | Fullscreen WebKitGTK host for the Omarchy screensaver |
+| `screensaver/` | Committed `npm run build:screensaver` bundle loaded by that host |
 
 ## Deploy
 

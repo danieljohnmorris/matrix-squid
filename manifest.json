@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.danieljohnmorris.matrix-squid",
+  "name": "Matrix Squid Screensaver",
+  "version": "1.0.0",
+  "author": "danieljohnmorris",
+  "license": "MIT",
+  "description": "Replaces the idle screensaver with a procedural Three.js swarm of Matrix Sentinels on every monitor.",
+  "homepage": "https://github.com/danieljohnmorris/matrix-squid",
+  "kinds": ["service"],
+  "entryPoints": {
+    "service": "Service.qml"
+  },
+  "preview": "preview.png"
+}

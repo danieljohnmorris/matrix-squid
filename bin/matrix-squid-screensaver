@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+"""Show the Matrix Squid screensaver fullscreen on every monitor.
+
+Usage: matrix-squid-screensaver [--app-id org.omarchy.screensaver]
+
+Windows use Omarchy's screensaver app id, so Omarchy's Hyprland rules make them
+fullscreen and its own launcher sees a screensaver already running. Any key,
+click, scroll or deliberate pointer movement exits, as does locking the session.
+"""
+
+import argparse
+import pathlib
+import signal
+import subprocess
+import sys
+
+import gi
+
+gi.require_version("Gdk", "3.0")
+gi.require_version("GLibUnix", "2.0")
+gi.require_version("Gtk", "3.0")
+gi.require_version("WebKit2", "4.1")
+from gi.repository import Gdk, GLib, GLibUnix, Gtk, WebKit2  # noqa: E402
+
+PAGE = pathlib.Path(__file__).resolve().parent.parent / "screensaver" / "index.html"
+ARM_SECONDS = 1.5  # ignore pointer noise while windows map and take focus
+MOVE_PIXELS = 12
+LOCK_POLL_SECONDS = 5
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--app-id", default="org.omarchy.screensaver")
+    return parser.parse_args()
+
+
+class Screensaver(Gtk.Application):
+    def __init__(self, app_id):
+        # GTK 3 derives the Wayland app_id from the program name.
+        GLib.set_prgname(app_id)
+        # Unique application: a second launch only activates this instance.
+        super().__init__(application_id=app_id)
+        self.armed = False
+        self.origin = None
+        self.connect("activate", self.on_activate)
+
+    def on_activate(self, _app):
+        if self.get_windows():
+            return
+        display = Gdk.Display.get_default()
+        screen = Gdk.Screen.get_default()
+        uri = PAGE.as_uri() + "?screensaver"
+        for index in range(display.get_n_monitors()):
+            self.open_window(screen, index, uri)
+        GLib.timeout_add(int(ARM_SECONDS * 1000), self.arm)
+        GLib.timeout_add_seconds(LOCK_POLL_SECONDS, self.exit_when_locked)
+        for signum in (signal.SIGTERM, signal.SIGINT):
+            GLibUnix.signal_add(GLib.PRIORITY_DEFAULT, signum, self.quit_all, "signal")
+
+    def open_window(self, screen, monitor, uri):
+        window = Gtk.ApplicationWindow(application=self, title="Matrix Squid")
+        view = WebKit2.WebView()
+        view.set_background_color(Gdk.RGBA(0, 0, 0, 1))
+        settings = view.get_settings()
+        settings.set_enable_webgl(True)
+        settings.set_hardware_acceleration_policy(WebKit2.HardwareAccelerationPolicy.ALWAYS)
+        # The bundle is loaded from this plugin's own directory as ES modules.
+        settings.set_allow_file_access_from_file_urls(True)
+        view.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
+        for signal_name in ("key-press-event", "button-press-event", "scroll-event", "touch-event"):
+            view.connect(signal_name, self.on_input)
+        view.connect("motion-notify-event", self.on_motion)
+        window.add(view)
+        view.load_uri(uri)
+        window.show_all()
+        window.fullscreen_on_monitor(screen, monitor)
+
+    def arm(self):
+        self.armed = True
+        return False
+
+    def on_input(self, _widget, event):
+        if self.armed:
+            self.quit_all(event.type.value_nick)
+        return True
+
+    def on_motion(self, widget, event):
+        if not self.armed:
+            return False
+        # Widget coordinates: on Wayland GTK has no global pointer position.
+        point = (widget, event.x, event.y)
+        if self.origin is None or self.origin[0] is not widget:
+            self.origin = point
+        elif abs(event.x - self.origin[1]) + abs(event.y - self.origin[2]) > MOVE_PIXELS:
+            self.quit_all("motion")
+        return False
+
+    def exit_when_locked(self):
+        try:
+            locked = subprocess.run(
+                ["omarchy-shell", "lock", "isLocked"],
+                capture_output=True, text=True, timeout=3,
+            ).stdout.strip() == "true"
+        except (OSError, subprocess.TimeoutExpired):
+            locked = False
+        if locked:
+            self.quit_all("locked")
+            return False
+        return True
+
+    def quit_all(self, reason):
+        print(f"matrix-squid-screensaver: exiting ({reason})", file=sys.stderr, flush=True)
+        self.quit()
+        return False
+
+
+def main():
+    args = parse_args()
+    if not PAGE.is_file():
+        sys.exit(f"missing screensaver bundle: {PAGE}")
+    sys.exit(Screensaver(args.app_id).run([sys.argv[0]]))
+
+
+if __name__ == "__main__":
+    main()

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Ship the repository as an Omarchy shell plugin (`io.github.danieljohnmorris.matrix-squid`): a service starts a fullscreen WebKitGTK screensaver per monitor at the `idle.screensaver` deadline, honours stay awake, the screensaver toggle and lock, exits on input, and adds `omarchy-shell matrix-squid launch`. `?screensaver` hides controls and the cursor and disables orbiting; metal textures resolve against the build base.
+
 - Darken the procedural clouds to subtle charcoal and separate their colour from black distance extinction, preventing far squid from becoming bright grey cut-outs; refresh the README image to match.
 - Refresh the README hero with longer tentacles, current monochrome haze, deployed sensors and a closer swimmer; warm its curved trail before capture instead of showing the straight initial history.
 - Add staggered camera-facing approach/retreat destinations alongside free roaming, with perspective-aware framing, varied starting headings and vertical return arcs in portrait layouts; retain avoidance and broad-turn limits.

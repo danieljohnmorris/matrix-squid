@@ -21,6 +21,8 @@
     .controls [aria-pressed="true"] .icon-active { display: block; }
     .hint { position: fixed; bottom: max(24px, env(safe-area-inset-bottom)); left: max(24px, env(safe-area-inset-left)); margin: 0; color: #8f9aa9; font-size: 12px; pointer-events: none; }
     #status { position: fixed; inset: 40% 24px auto; text-align: center; }
+    .screensaver .controls, .screensaver .hint { display: none; }
+    .screensaver, .screensaver * { cursor: none; }
   </style>
 </head>
 <body>

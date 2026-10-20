@@ -4,7 +4,7 @@ import * as THREE from 'three';
 export function applyMetalFinish(scene, renderer, onLoad) {
   const loader = new THREE.TextureLoader();
   const textures = ['roughness', 'normal'].map(kind => {
-    const texture = loader.load(`/textures/metal-${kind}.png`, onLoad);
+    const texture = loader.load(`${import.meta.env.BASE_URL}textures/metal-${kind}.png`, onLoad);
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(3, 3);
     texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());

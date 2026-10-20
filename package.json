@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
+    "build:screensaver": "vite build --mode screensaver && rm -rf screensaver/screenshots",
     "bake:metal": "node scripts/bake-metal.mjs",
     "test": "node --test",
     "preview": "vite preview --host 127.0.0.1"

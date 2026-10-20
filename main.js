@@ -5,6 +5,9 @@ import { createSwimMotion } from "./swim-motion.js";
 import { applyMetalFinish } from "./metal-finish.js";
 import { createAtmosphere } from "./atmosphere.js";
 import { createCameraPass } from "./camera-pass.js";
+// Omarchy's screensaver host loads ?screensaver: no controls, cursor or orbiting.
+const screensaver = new URLSearchParams(location.search).has("screensaver");
+document.documentElement.classList.toggle("screensaver", screensaver);
 const fullscreen = document.getElementById("fullscreen");
 fullscreen.hidden = !document.fullscreenEnabled;
 fullscreen.addEventListener("click", async () => {
@@ -48,6 +51,7 @@ function mountSentinels() {
   controls.minDistance = 8;
   controls.maxDistance = 75;
   controls.enablePan = false;
+  controls.enabled = !screensaver;
   controls.addEventListener("change", () => renderer.render(scene, camera));
   scene.add(new THREE.HemisphereLight(0xffffff, 0x202020, .35));
   const light = new THREE.DirectionalLight(0xffffff, 2);
