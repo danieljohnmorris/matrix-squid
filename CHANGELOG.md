@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Darken the procedural clouds to subtle charcoal and separate their colour from black distance extinction, preventing far squid from becoming bright grey cut-outs; refresh the README image to match.
-- Refresh the README hero with the longer tentacles and current monochrome haze, retaining a deployed sensor pose and a closer coasting Sentinel.
+- Refresh the README hero with longer tentacles, current monochrome haze, deployed sensors and a closer swimmer; warm its curved trail before capture instead of showing the straight initial history.
 - Add staggered camera-facing approach/retreat destinations alongside free roaming, with perspective-aware framing, varied starting headings and vertical return arcs in portrait layouts; retain avoidance and broad-turn limits.
 - Replace near-black extinction with grey depth haze and a slowly drifting procedural monochrome backdrop, preserving Sentinel materials and scene lighting.
 - Lengthen main tentacles by 50% and increase their segments from 56 to 84, retaining detail spacing and extending trail-collision sampling.
