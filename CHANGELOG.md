@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Rename the project and repository to `matrix-squid`, serve it at `matrix-squid.danieljohnmorris.com`, and permanently redirect the previous plural host from the container.
+- Add a README screenshot of a close Sentinel deploying its sensor dishes and probes, with a second swimmer behind.
+
 - Replace text controls with stateful pause/play and fullscreen icons plus the GitHub logo, retaining accessible labels, tooltips and 44px targets.
 - Add vgpu-baked brushed-metal roughness and normal maps, neutral reflection lighting and tone mapping; preserve dark gunmetal between lit highlights.
 - Keep tentacle running lights as subdued red accents, dimmer than the optical lenses.

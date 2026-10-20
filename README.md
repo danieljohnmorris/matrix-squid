@@ -1,8 +1,10 @@
-# Matrix Squids
+# Matrix Squid
 
 A procedural Three.js swarm inspired by the Sentinels from *The Matrix*: articulated mechanical tentacles, red optics, dark metal and autonomous movement through a foggy 3D space.
 
-**[Open the live demo](https://matrix-squids.danieljohnmorris.com)**
+**[Open the live demo](https://matrix-squid.danieljohnmorris.com)**
+
+![A close Sentinel with deployed sensor dishes and probes, with another swimming farther behind.](public/screenshots/matrix-squid.png)
 
 ## The scene
 
@@ -31,8 +33,8 @@ The scene respects reduced-motion preferences and suspends animation while the t
 Use Node.js 22 and npm, plus a browser with WebGL and hardware acceleration enabled.
 
 ```sh
-git clone https://github.com/danieljohnmorris/matrix-squids.git
-cd matrix-squids
+git clone https://github.com/danieljohnmorris/matrix-squid.git
+cd matrix-squid
 npm ci
 npm run dev -- --port 4330
 ```
@@ -77,8 +79,8 @@ This replaces `public/textures/metal-roughness.png` and `public/textures/metal-n
 Serve `dist/` from a static web host after `npm run build`, or use the included Node-to-nginx Docker build:
 
 ```sh
-docker build -t matrix-squids .
-docker run --rm -p 8080:80 matrix-squids
+docker build -t matrix-squid .
+docker run --rm -p 8080:80 matrix-squid
 ```
 
 The container serves the site at `http://localhost:8080`. It does not regenerate textures or require a GPU.
