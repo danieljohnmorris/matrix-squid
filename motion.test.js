@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { createSwimMotion } from './swim-motion.js';
 import { createSentinel } from './sentinel-model.js';
+import { createCameraPass } from './camera-pass.js';
 
 function swimmer(x, z) {
   const group = new THREE.Group();
@@ -63,6 +64,42 @@ test('free roaming turns back through its own depth volume without a boundary sn
     assert.ok(visited.min.x < -width / 2, 'Swimmer never returned across its roaming area');
     assert.ok(visited.max.y - visited.min.y > height, 'Roaming collapsed to a horizontal track');
     assert.ok(visited.max.z - visited.min.z > (front - back) / 2, 'Roaming lost its assigned depth range');
+  }
+});
+
+test('staged passes approach inside the portrait frame, depart and return without snapping', () => {
+  for (const aspect of [390 / 844, 1440 / 900]) {
+    let seed = 11;
+    const random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 4294967296);
+    const position = new THREE.Vector3(0, -1, 6);
+    const pass = createCameraPass(position, 2, { aspect }, random);
+    const heading = pass.update(0).clone().sub(position).normalize();
+    const swim = createSwimMotion(position, random, heading);
+    const previous = position.clone();
+    const rotation = swim.rotation.clone();
+    const direction = new THREE.Vector3();
+    let approaches = 0;
+    let countedApproach = false;
+    let departed = false;
+    for (let frame = 0; frame < 10800; frame++) {
+      previous.copy(position);
+      rotation.copy(swim.rotation);
+      swim.advance(1 / 30, .85, [], null, pass.update(frame / 30));
+      const travelled = position.distanceTo(previous);
+      assert.ok(Math.abs(travelled - .85 / 30) < 1e-9, 'Pass teleported or stalled');
+      assert.ok(rotation.angleTo(swim.rotation) <= travelled / 8 + 1e-7, 'Pass snapped its heading');
+      if (position.z < -5) {
+        departed = true;
+        countedApproach = false;
+      }
+      const halfHeight = Math.tan(THREE.MathUtils.degToRad(25)) * (30 - position.z);
+      const visible = Math.abs(position.x) < halfHeight * aspect - .7 && Math.abs(position.y) < halfHeight - .7;
+      if (!countedApproach && position.z > 12 && visible && direction.set(0, 0, 1).applyQuaternion(swim.rotation).z > .7) {
+        approaches++;
+        countedApproach = true;
+      }
+    }
+    assert.ok(approaches >= 2 && departed, 'Pass did not depart and make another front-facing approach');
   }
 });
 

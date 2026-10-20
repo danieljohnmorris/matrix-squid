@@ -291,8 +291,8 @@ export function createSentinel() {
   }
 
   const tentacleCount = 15;
-  const segments = 56;
-  const lengths = new Float32Array([8.5, 7.4, 8.8, 6.75, 8.25, 7.8, 8.6, 7.1, 8.4, 7.5, 8.05, 7, 8.4, 7.6, 8.3]);
+  const segments = 84;
+  const lengths = new Float32Array([12.75, 11.1, 13.2, 10.125, 12.375, 11.7, 12.9, 10.65, 12.6, 11.25, 12.075, 10.5, 12.6, 11.4, 12.45]);
   const longestTentacle = Math.max(...lengths);
   const phases = Float32Array.from({ length: tentacleCount }, (_, i) => i * 2.39996);
   const angles = Float32Array.from({ length: tentacleCount }, (_, i) => i / tentacleCount * Math.PI * 2 + .16 + .07 * Math.sin(i * 3.1));

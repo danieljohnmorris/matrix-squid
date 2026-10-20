@@ -65,30 +65,32 @@ export function createSwimMotion(position, random = Math.random, heading = null,
     remaining = 20 + random() * 20;
   }
 
-  function advance(dt, speed, neighbours = [], self = null) {
+  function advance(dt, speed, neighbours = [], self = null, destination = null) {
     if (dt <= 0 || speed <= 0) return;
     direction.copy(forward).applyQuaternion(rotation);
     // Retire a destination before it becomes a point to circle around.
-    if (remaining <= 0 || position.distanceToSquared(target) < 100) chooseTarget();
-    desired.subVectors(target, position).normalize();
-    // Look ahead beyond the turn radius: boundaries bend the path, never bounce
-    // or teleport the swimmer. These limits are independent of the camera.
-    offset.copy(position).addScaledVector(direction, 12);
-    for (const axis of axes) {
-      if (offset[axis] < volume.min[axis]) desired[axis] += Math.min(2, (volume.min[axis] - offset[axis]) / 8);
-      if (offset[axis] > volume.max[axis]) desired[axis] -= Math.min(2, (offset[axis] - volume.max[axis]) / 8);
+    if (!destination && (remaining <= 0 || position.distanceToSquared(target) < 100)) chooseTarget();
+    desired.subVectors(destination ?? target, position).normalize();
+    // Staged passes have their own approach and retreat destinations. Applying
+    // the roaming lookahead here would turn them away before they got close.
+    if (!destination) {
+      offset.copy(position).addScaledVector(direction, 12);
+      for (const axis of axes) {
+        if (offset[axis] < volume.min[axis]) desired[axis] += Math.min(2, (volume.min[axis] - offset[axis]) / 8);
+        if (offset[axis] > volume.max[axis]) desired[axis] -= Math.min(2, (offset[axis] - volume.max[axis]) / 8);
+      }
     }
     avoid.set(0, 0, 0);
     let travel = speed * dt;
     const ownRadius = envelopeRadius(self);
-    for (let i = 0; i < ownPoints.length; i++) sample(i * 2.3, ownPoints[i]);
+    for (let i = 0; i < ownPoints.length; i++) sample(i * 3.3, ownPoints[i]);
     let nearest = Infinity;
     for (const other of neighbours) {
       if (other === self) continue;
       const radius = ownRadius + envelopeRadius(other);
       // Reject distant pairs before comparing their curved trail capsules.
       if (position.distanceToSquared(other.group.position) > (radius + 26) ** 2) continue;
-      for (let i = 0; i < otherPoints.length; i++) other.swim.sample(i * 2.3, otherPoints[i]);
+      for (let i = 0; i < otherPoints.length; i++) other.swim.sample(i * 3.3, otherPoints[i]);
       let distanceSq = Infinity;
       for (let i = 0; i < ownPoints.length - 1; i++) {
         for (let j = 0; j < otherPoints.length - 1; j++) {
@@ -107,7 +109,8 @@ export function createSwimMotion(position, random = Math.random, heading = null,
       else offset.subVectors(position, other.group.position).normalize();
       const weight = THREE.MathUtils.clamp((12 - clearance) / 12, 0, 1);
       avoid.addScaledVector(offset, weight * weight * 4);
-      side.set(direction.z, 0, -direction.x);
+      if (volume.max.x - volume.min.x < volume.max.y - volume.min.y) side.set(0, -direction.z, direction.y);
+      else side.set(direction.z, 0, -direction.x);
       if (side.lengthSq() < .01) side.set(1, 0, 0);
       avoid.addScaledVector(side.normalize(), weight * .6);
       // Reserve stopping distance only when moving into the other envelope.

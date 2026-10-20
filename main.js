@@ -3,6 +3,8 @@ import { createSentinel } from "./sentinel-model.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { createSwimMotion } from "./swim-motion.js";
 import { applyMetalFinish } from "./metal-finish.js";
+import { createAtmosphere } from "./atmosphere.js";
+import { createCameraPass } from "./camera-pass.js";
 const fullscreen = document.getElementById("fullscreen");
 fullscreen.hidden = !document.fullscreenEnabled;
 fullscreen.addEventListener("click", async () => {
@@ -39,7 +41,7 @@ function mountSentinels() {
   host.append(renderer.domElement);
   const scene = new THREE.Scene;
   scene.background = new THREE.Color(0x101010);
-  scene.fog = new THREE.FogExp2(0x101010, 0.016);
+  const atmosphere = createAtmosphere(scene);
   const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 150);
   camera.position.z = 30;
   const controls = new OrbitControls(camera, renderer.domElement);
@@ -58,11 +60,13 @@ function mountSentinels() {
   const nearVolume = new THREE.Box3();
   const farVolume = new THREE.Box3();
   const middleVolume = new THREE.Box3();
+  const view = { aspect: window.innerWidth / window.innerHeight };
   const swarm = [];
   const metalFinish = applyMetalFinish(scene, renderer, () => renderer.render(scene, camera));
   function syncSwarm() {
     const width = window.innerWidth;
     const aspect = width / window.innerHeight;
+    view.aspect = aspect;
     const spread = Math.max(.4, aspect / (16 / 9));
     const nearWidth = Math.max(4, 18 * aspect / (16 / 9));
     const nearFront = aspect < 1 ? 12 : 18;
@@ -87,13 +91,17 @@ function mountSentinels() {
           THREE.MathUtils.lerp(volume.min.y, volume.max.y, Math.random()),
           THREE.MathUtils.lerp(volume.min.z, volume.max.z, Math.random()),
         );
-        if (i === 2) sentinel.group.position.set(-nearWidth * .4, -3, nearFront - 2);
+        if (i === 2) sentinel.group.position.set(0, -1, 6);
         if (swarm.every(other => other.group.position.distanceToSquared(sentinel.group.position) > 81)) break;
       }
-      const heading = new THREE.Vector3(i % 2 === 0 ? .7 : -.7, (i % 3 - 1) * .2, -.7).normalize();
+      const pass = i >= 2 && (i === 3 || i % 3 === 2) ? createCameraPass(sentinel.group.position, i, view) : null;
+      const firstTarget = pass?.update(elapsed);
+      const heading = firstTarget
+        ? new THREE.Vector3().subVectors(firstTarget, sentinel.group.position).normalize()
+        : new THREE.Vector3(aspect < 1 ? 0 : i % 2 === 0 ? .7 : -.7, (i % 3 - 1) * .3, i % 3 === 1 ? .7 : -.7).normalize();
       metalFinish.apply(sentinel.group);
       scene.add(sentinel.group);
-      swarm.push({ ...sentinel, swim: createSwimMotion(sentinel.group.position, Math.random, heading, volume) });
+      swarm.push({ ...sentinel, pass, swim: createSwimMotion(sentinel.group.position, Math.random, heading, volume) });
     }
   }
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -122,7 +130,7 @@ function mountSentinels() {
       const sinceRelease = (cycle + 2) % 98;
       const releaseSurge = 3.4 * smooth(0, 1.4, sinceRelease) * Math.exp(-Math.max(0, sinceRelease - 1.4) * .95) * (1 - smooth(6, 8, sinceRelease));
       const speed = (0.85 + surge) * (braking + departing) + releaseSurge;
-      sentinel.swim.advance(dt, speed, swarm, sentinel);
+      sentinel.swim.advance(dt, speed, swarm, sentinel, sentinel.pass?.update(elapsed));
       const scanTime = Math.max(0, Math.min(3.999, cycle - 92));
       const gazeIndex = Math.min(4, Math.floor(scanTime / .8));
       const gazeBlend = smooth(0, .65, scanTime - gazeIndex * .8);
@@ -142,6 +150,7 @@ function mountSentinels() {
       sentinel.motion.sensing = sensing;
       sentinel.update(elapsed + i * 9, sensing, 0);
     });
+    atmosphere.update(elapsed, camera);
     renderer.render(scene, camera);
   }
   function resize() {

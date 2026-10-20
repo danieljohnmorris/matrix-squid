@@ -16,6 +16,8 @@ Each Sentinel has a sculpted mechanical head, fifteen segmented tentacles, artic
 
 Swimmers independently choose changing 3D destinations rather than following closed patrol loops. Collision-avoidance steering and an eight-unit minimum turn radius preserve broad turns and trailing tentacle inertia. Near and distant roaming volumes provide depth; approaching their limits bends a swimmer back inward without snapping or teleporting. Squid can leave the frame and return—the screen edges are not walls, and orbiting the camera does not move their world-space limits.
 
+Foreground swimmers also make staggered, randomized approach-and-retreat passes through the initial camera view. One starts facing forward; later passes blend back into independent roaming. Approach destinations account for perspective and portrait aspect ratios, while avoidance can still divert a pass and squid can naturally leave the frame. Orbiting does not make the swarm chase the camera.
+
 Population scales with viewport width, including fullscreen and live resizing:
 
 | Viewport width (CSS pixels) | Squid |
@@ -28,9 +30,11 @@ Population scales with viewport width, including fullscreen and live resizing:
 
 Roaming width also follows the viewport aspect ratio, spreading the swarm across ultrawide displays while keeping portrait roaming narrower. Existing swimmers retain their positions when resizing; they steer gradually into the updated volumes. Removed swimmers release their procedural geometry and materials; new swimmers share the existing baked metal maps.
 
-Grey fog softens the distance, while directional lights and neutral environment reflections reveal the metal. Subdued red running lights follow the simulated tentacle segments.
+Grey exponential depth fog fades distant swimmers into silhouettes. A slowly drifting, procedural monochrome backdrop adds broad patches of haze without particles or a screen-space overlay. Directional lights and neutral environment reflections reveal the metal; subdued red running lights follow the simulated tentacle segments.
 
 Tentacle vertebrae, collars, joint caps and claws use darker gunmetal than the head hardware, retaining lighting-driven highlights without continuous silver bands.
+
+Main tentacles range from 10.125 to 13.2 model units, approximately four to five head-shell lengths. Each uses 84 segments, preserving vertebra and running-light spacing while extending the world-space trail and avoidance sampling.
 
 The six small underside manipulators are separate hinged tools: flattened links, exposed parallel actuators and hooked pincers. They normally fold beneath the chin, occasionally reaching or hanging in staggered pairs rather than paddling with the propulsion stroke.
 

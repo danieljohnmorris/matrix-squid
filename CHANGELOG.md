@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add staggered camera-facing approach/retreat destinations alongside free roaming, with perspective-aware framing, varied starting headings and vertical return arcs in portrait layouts; retain avoidance and broad-turn limits.
+- Replace near-black extinction with grey depth haze and a slowly drifting procedural monochrome backdrop, preserving Sentinel materials and scene lighting.
+- Lengthen main tentacles by 50% and increase their segments from 56 to 84, retaining detail spacing and extending trail-collision sampling.
 - Replace closed patrol loops with independent changing 3D destinations, distance-based retargeting and gradual world-space boundary steering; retain collision avoidance, broad turns and world-space tentacle trails.
 - Scale the swarm from four squid on phones to sixteen on large screens, widening roaming space for ultrawide aspect ratios and updating population on resize/fullscreen without resetting existing swimmers.
 - Apply the shared metal finish to dynamically added squid and dispose removed procedural resources without changing scene lighting, fog or materials.
