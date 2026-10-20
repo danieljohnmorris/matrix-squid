@@ -66,7 +66,13 @@ Start it immediately with:
 omarchy-shell matrix-squid launch
 ```
 
-Omarchy has no screensaver hook, so the plugin starts one second before the built-in screensaver and uses its `org.omarchy.screensaver` window class: Omarchy's fullscreen window rules apply, and its terminal screensaver sees one already running and stays closed. *System > Screensaver* still opens the terminal screensaver.
+Omarchy has no screensaver hook, so the plugin starts one second before the built-in screensaver and uses its `org.omarchy.screensaver` window class: Omarchy's fullscreen window rules apply, and its terminal screensaver sees one already running and stays closed.
+
+The plugin does not edit your menu. To make *System > Screensaver* (`Super + Esc`) open the squid too, add this line to `~/.config/omarchy/extensions/omarchy-menu.jsonc`; it reloads on save:
+
+```jsonc
+"system.screensaver": {"action":"omarchy-shell matrix-squid launch"},
+```
 
 Dependencies, all in Omarchy's base install: `python-gobject` and WebKitGTK (`webkit2gtk-4.1`, pulled in by `aether`) with WebGL hardware acceleration. The plugin needs no network access, build step or privileges; it renders the committed `screensaver/` bundle. After changing the scene, rebuild it with `npm run build:screensaver` and commit the result.
 
