@@ -27,7 +27,6 @@ test('nearby parallel swimmers coast without a full-tail-radius braking deadlock
 test('slowing down does not tighten a swimming turn', () => {
   for (const speed of [.1, .85, 4]) {
     const sentinel = swimmer(0, 0);
-    sentinel.guide = new THREE.Vector3(10, 0, -10);
     const previous = new THREE.Vector3();
     const rotation = new THREE.Quaternion();
     for (let frame = 0; frame < 120; frame++) {
@@ -37,6 +36,33 @@ test('slowing down does not tighten a swimming turn', () => {
       const distance = previous.distanceTo(sentinel.group.position);
       assert.ok(rotation.angleTo(sentinel.swim.rotation) <= distance / 8 + 1e-7, 'Turn radius collapsed while slowing');
     }
+  }
+});
+
+test('free roaming turns back through its own depth volume without a boundary snap', () => {
+  for (const [width, height, back, front] of [[18, 12, -7, 18], [11, 12, -7, 18], [48, 16, -38, -14]]) {
+    let seed = 12;
+    const random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 4294967296);
+    const volume = new THREE.Box3(new THREE.Vector3(-width, -height, back), new THREE.Vector3(width, height, front));
+    const position = volume.getCenter(new THREE.Vector3());
+    position.x = width - 1;
+    const swim = createSwimMotion(position, random, new THREE.Vector3(1, 0, 0), volume);
+    const visited = new THREE.Box3();
+    const previous = new THREE.Vector3();
+    const rotation = new THREE.Quaternion();
+    for (let frame = 0; frame < 18000; frame++) {
+      previous.copy(position);
+      rotation.copy(swim.rotation);
+      swim.advance(1 / 30, 1.4);
+      const distance = previous.distanceTo(position);
+      assert.ok(Math.abs(distance - 1.4 / 30) < 1e-9, 'Boundary teleported or stopped the swimmer');
+      assert.ok(rotation.angleTo(swim.rotation) <= distance / 8 + 1e-7, 'Boundary snapped the heading');
+      assert.ok(volume.distanceToPoint(position) < 8, 'Swimmer escaped beyond its return-turn radius');
+      visited.expandByPoint(position);
+    }
+    assert.ok(visited.min.x < -width / 2, 'Swimmer never returned across its roaming area');
+    assert.ok(visited.max.y - visited.min.y > height, 'Roaming collapsed to a horizontal track');
+    assert.ok(visited.max.z - visited.min.z > (front - back) / 2, 'Roaming lost its assigned depth range');
   }
 });
 

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
 const forward = new THREE.Vector3(0, 0, 1);
+const axes = ['x', 'y', 'z'];
 const desired = new THREE.Vector3();
 const direction = new THREE.Vector3();
 const targetRotation = new THREE.Quaternion();
@@ -38,8 +39,9 @@ function envelopeRadius(sentinel) {
 }
 const spacing = .06;
 const historySize = 256;
+const defaultVolume = new THREE.Box3(new THREE.Vector3(-23, -15, -23), new THREE.Vector3(23, 15, 25));
 
-export function createSwimMotion(position, random = Math.random, heading = null) {
+export function createSwimMotion(position, random = Math.random, heading = null, volume = defaultVolume) {
   const rotation = new THREE.Quaternion();
   if (heading) rotation.setFromUnitVectors(forward, heading);
   else rotation.setFromAxisAngle(new THREE.Vector3(0, 1, 0), random() * Math.PI * 2);
@@ -50,22 +52,32 @@ export function createSwimMotion(position, random = Math.random, heading = null)
   let remaining = 0;
 
   function chooseTarget() {
-    target.set((random() * 2 - 1) * 23, (random() * 2 - 1) * 15, random() * 48 - 23);
-    remaining = 18 + random() * 12;
+    // Prefer a long traverse ahead, but allow a wide return turn near an edge.
+    for (let attempt = 0; attempt < 16; attempt++) {
+      target.set(
+        THREE.MathUtils.lerp(volume.min.x, volume.max.x, random()),
+        THREE.MathUtils.lerp(volume.min.y, volume.max.y, random()),
+        THREE.MathUtils.lerp(volume.min.z, volume.max.z, random()),
+      );
+      offset.subVectors(target, position);
+      if (offset.lengthSq() >= 196 && offset.dot(direction) > offset.length() * .15) break;
+    }
+    remaining = 20 + random() * 20;
   }
 
   function advance(dt, speed, neighbours = [], self = null) {
     if (dt <= 0 || speed <= 0) return;
-    if (self?.guide) {
-      target.copy(self.guide);
-    } else {
-      remaining -= dt;
-      if (remaining <= 0 || position.distanceToSquared(target) < 2.25) chooseTarget();
-      // Steer back into the volume rather than wrapping or teleporting at an edge.
-      if (Math.abs(position.x) > 28 || Math.abs(position.y) > 20 || position.z < -28 || position.z > 25) target.set(0, 0, 0);
-    }
-    desired.subVectors(target, position).normalize();
     direction.copy(forward).applyQuaternion(rotation);
+    // Retire a destination before it becomes a point to circle around.
+    if (remaining <= 0 || position.distanceToSquared(target) < 100) chooseTarget();
+    desired.subVectors(target, position).normalize();
+    // Look ahead beyond the turn radius: boundaries bend the path, never bounce
+    // or teleport the swimmer. These limits are independent of the camera.
+    offset.copy(position).addScaledVector(direction, 12);
+    for (const axis of axes) {
+      if (offset[axis] < volume.min[axis]) desired[axis] += Math.min(2, (volume.min[axis] - offset[axis]) / 8);
+      if (offset[axis] > volume.max[axis]) desired[axis] -= Math.min(2, (offset[axis] - volume.max[axis]) / 8);
+    }
     avoid.set(0, 0, 0);
     let travel = speed * dt;
     const ownRadius = envelopeRadius(self);
@@ -110,6 +122,7 @@ export function createSwimMotion(position, random = Math.random, heading = null)
     rotation.rotateTowards(targetRotation, turn);
     direction.copy(forward).applyQuaternion(rotation);
     position.addScaledVector(direction, travel);
+    remaining -= travel;
     if (position.distanceToSquared(history[newest]) >= spacing * spacing) {
       newest = (newest + historySize - 1) % historySize;
       history[newest].copy(position);

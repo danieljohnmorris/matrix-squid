@@ -10,22 +10,25 @@ export function applyMetalFinish(scene, renderer, onLoad) {
     texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
     return texture;
   });
-  const materials = new Set();
-  scene.traverse(object => {
-    if (!object.isMesh) return;
-    for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
-      if (!material.isMeshStandardMaterial || material.metalness < .7 || materials.has(material)) continue;
-      materials.add(material);
-      const grey = (material.color.r + material.color.g + material.color.b) / 3;
-      material.color.setRGB(grey, grey, grey);
-      material.metalness = .96;
-      material.roughness = material.roughness >= .45 ? .64 : .42;
-      material.roughnessMap = textures[0];
-      material.normalMap = textures[1];
-      material.normalScale.set(.45, .45);
-      material.needsUpdate = true;
-    }
-  });
+  function apply(root) {
+    const materials = new Set();
+    root.traverse(object => {
+      if (!object.isMesh) return;
+      for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+        if (!material.isMeshStandardMaterial || material.metalness < .7 || materials.has(material)) continue;
+        materials.add(material);
+        const grey = (material.color.r + material.color.g + material.color.b) / 3;
+        material.color.setRGB(grey, grey, grey);
+        material.metalness = .96;
+        material.roughness = material.roughness >= .45 ? .64 : .42;
+        material.roughnessMap = textures[0];
+        material.normalMap = textures[1];
+        material.normalScale.set(.45, .45);
+        material.needsUpdate = true;
+      }
+    });
+  }
+  apply(scene);
 
   // Broad neutral reflection cards, not a visible room or a coloured sky.
   const studio = new THREE.Scene();
@@ -51,9 +54,12 @@ export function applyMetalFinish(scene, renderer, onLoad) {
   pmrem.dispose();
   geometry.dispose();
   studio.children.forEach(card => card.material.dispose());
-  return () => {
-    scene.environment = null;
-    environment.dispose();
-    textures.forEach(texture => texture.dispose());
+  return {
+    apply,
+    dispose() {
+      scene.environment = null;
+      environment.dispose();
+      textures.forEach(texture => texture.dispose());
+    },
   };
 }

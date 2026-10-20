@@ -54,41 +54,48 @@ function mountSentinels() {
   const rim = new THREE.DirectionalLight(0xffffff, 1.2);
   rim.position.set(8, -3, -5);
   scene.add(rim);
-  // World-space passes, not a point to orbit or a camera-attached formation.
-  // Staggered near swimmers take turns approaching; one stays in the haze.
-  const narrow = window.innerWidth / window.innerHeight < 1;
-  const nearRoute = new THREE.CatmullRomCurve3(Array.from({ length: 8 }, (_, i) => {
-    const angle = i * Math.PI / 4;
-    const x = Math.sin(angle) * 9;
-    const y = Math.sin(angle * 2) * 2;
-    const z = 9 + Math.cos(angle) * 11;
-    return narrow ? new THREE.Vector3(y * .7, x * .85, z - 6) : new THREE.Vector3(x, y, z);
-  }), true);
-  const farRoute = new THREE.CatmullRomCurve3([
-    [-12, 6, -24], [-3, 9, -16], [11, 5, -20],
-    [12, -6, -30], [-2, -9, -35], [-14, -2, -33],
-  ].map(([x, y, z]) => new THREE.Vector3(narrow ? x * .45 : x, y, z)), true);
-  const routeSamples = new Map([nearRoute, farRoute].map(route => [route, route.getSpacedPoints(128)]));
-  const firstForeground = window.innerWidth < 640 ? 1 : 2;
-  const foregroundCount = window.innerWidth < 640 ? 2 : 3;
-  const swarm = Array.from({ length: window.innerWidth < 640 ? 3 : 5 }, (_, i) => {
-    const sentinel = createSentinel();
-    sentinel.group.scale.setScalar(0.65);
-    scene.add(sentinel.group);
-    const foreground = i >= firstForeground;
-    sentinel.group.position.set(i % 2 === 0 ? -9 : 9, (i % 3 - 1) * 8, -16 + i * 8);
-    const route = foreground ? nearRoute : i === 0 ? farRoute : null;
-    const guide = route ? new THREE.Vector3() : null;
-    const progress = foreground ? (.85 + (i - firstForeground) / foregroundCount) % 1 : .1;
-    const routeLength = route?.getLength() ?? 0;
-    if (route) {
-      route.getPointAt(progress, sentinel.group.position);
-      route.getPointAt((progress + 9 / routeLength) % 1, guide);
+  // Independent world-space roaming volumes; no shared or repeating tracks.
+  const nearVolume = new THREE.Box3();
+  const farVolume = new THREE.Box3();
+  const middleVolume = new THREE.Box3();
+  const swarm = [];
+  const metalFinish = applyMetalFinish(scene, renderer, () => renderer.render(scene, camera));
+  function syncSwarm() {
+    const width = window.innerWidth;
+    const aspect = width / window.innerHeight;
+    const spread = Math.max(.4, aspect / (16 / 9));
+    const nearWidth = Math.max(4, 18 * aspect / (16 / 9));
+    const nearFront = aspect < 1 ? 12 : 18;
+    nearVolume.set(new THREE.Vector3(-nearWidth, -12, -7), new THREE.Vector3(nearWidth, 12, nearFront));
+    middleVolume.set(new THREE.Vector3(-23 * spread, -15, -22), new THREE.Vector3(23 * spread, 15, 8));
+    farVolume.set(new THREE.Vector3(-24 * spread, -16, -38), new THREE.Vector3(24 * spread, 16, -14));
+    const count = width < 640 ? 4 : width < 1200 ? 6 : width < 1920 ? 8 : width < 3000 ? 12 : 16;
+    while (swarm.length > count) {
+      const sentinel = swarm.pop();
+      scene.remove(sentinel.group);
+      disposeMeshes(sentinel.group);
     }
-    const heading = route ? route.getTangentAt(progress) : null;
-    return { ...sentinel, guide, route, routeLength, swim: createSwimMotion(sentinel.group.position, Math.random, heading) };
-  });
-  const disposeMetalFinish = applyMetalFinish(scene, renderer, () => renderer.render(scene, camera));
+    while (swarm.length < count) {
+      const i = swarm.length;
+      const sentinel = createSentinel();
+      sentinel.group.scale.setScalar(.65);
+      const volume = i === 0 ? farVolume : i === 1 ? middleVolume : i < 4 ? nearVolume
+        : i % 3 === 0 ? farVolume : i % 3 === 1 ? middleVolume : nearVolume;
+      for (let attempt = 0; attempt < 24; attempt++) {
+        sentinel.group.position.set(
+          THREE.MathUtils.lerp(volume.min.x, volume.max.x, Math.random()),
+          THREE.MathUtils.lerp(volume.min.y, volume.max.y, Math.random()),
+          THREE.MathUtils.lerp(volume.min.z, volume.max.z, Math.random()),
+        );
+        if (i === 2) sentinel.group.position.set(-nearWidth * .4, -3, nearFront - 2);
+        if (swarm.every(other => other.group.position.distanceToSquared(sentinel.group.position) > 81)) break;
+      }
+      const heading = new THREE.Vector3(i % 2 === 0 ? .7 : -.7, (i % 3 - 1) * .2, -.7).normalize();
+      metalFinish.apply(sentinel.group);
+      scene.add(sentinel.group);
+      swarm.push({ ...sentinel, swim: createSwimMotion(sentinel.group.position, Math.random, heading, volume) });
+    }
+  }
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   let paused = reduced.matches;
   let elapsed = 0;
@@ -115,18 +122,6 @@ function mountSentinels() {
       const sinceRelease = (cycle + 2) % 98;
       const releaseSurge = 3.4 * smooth(0, 1.4, sinceRelease) * Math.exp(-Math.max(0, sinceRelease - 1.4) * .95) * (1 - smooth(6, 8, sinceRelease));
       const speed = (0.85 + surge) * (braking + departing) + releaseSurge;
-      if (sentinel.route) {
-        // Rejoin ahead of the nearest point after avoidance, rather than
-        // circling a missed waypoint. Steering still owns position and heading.
-        const samples = routeSamples.get(sentinel.route);
-        let nearest = 0;
-        let distance = Infinity;
-        for (let j = 0; j < 128; j++) {
-          const candidate = sentinel.group.position.distanceToSquared(samples[j]);
-          if (candidate < distance) { distance = candidate; nearest = j; }
-        }
-        sentinel.route.getPointAt((nearest / 128 + 9 / sentinel.routeLength) % 1, sentinel.guide);
-      }
       sentinel.swim.advance(dt, speed, swarm, sentinel);
       const scanTime = Math.max(0, Math.min(3.999, cycle - 92));
       const gazeIndex = Math.min(4, Math.floor(scanTime / .8));
@@ -153,6 +148,7 @@ function mountSentinels() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    syncSwarm();
     draw();
   }
   function tick(now) {
@@ -205,9 +201,14 @@ function mountSentinels() {
     button.removeEventListener("click", toggle);
     renderer.domElement.removeEventListener("webglcontextlost", contextLost);
     controls.dispose();
+    disposeMeshes(scene);
+    metalFinish.dispose();
+    renderer.dispose();
+  }, { once: true });
+  function disposeMeshes(root) {
     const geometries = new Set;
     const materials = new Set;
-    scene.traverse((object) => {
+    root.traverse((object) => {
       if (object instanceof THREE.Mesh) {
         geometries.add(object.geometry);
         for (const material of Array.isArray(object.material) ? object.material : [object.material])
@@ -218,8 +219,6 @@ function mountSentinels() {
     });
     geometries.forEach((geometry) => geometry.dispose());
     materials.forEach((material) => material.dispose());
-    disposeMetalFinish();
-    renderer.dispose();
-  }, { once: true });
+  }
 }
 mountSentinels();

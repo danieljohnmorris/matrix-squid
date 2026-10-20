@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Replace closed patrol loops with independent changing 3D destinations, distance-based retargeting and gradual world-space boundary steering; retain collision avoidance, broad turns and world-space tentacle trails.
+- Scale the swarm from four squid on phones to sixteen on large screens, widening roaming space for ultrawide aspect ratios and updating population on resize/fullscreen without resetting existing swimmers.
+- Apply the shared metal finish to dynamically added squid and dispose removed procedural resources without changing scene lighting, fog or materials.
 - Give tentacle vertebrae, collars, joint caps and claws dedicated dark-gunmetal materials instead of sharing bright head hardware; preserve lighting, fog and red running-light intensity.
 - Rename the project and repository to `matrix-squid`, serve it at `matrix-squid.danieljohnmorris.com`, and permanently redirect the previous plural host from the container.
 - Add a README screenshot of deployed sensor dishes and probes beside a closer coasting Sentinel and distant patrol, using the live scene's lighting, metal materials and grey depth fog.
@@ -14,7 +17,6 @@
 - Add spaced emissive red windows along all fifteen tentacles, attached to their simulated segments rather than a separate animation.
 - Animate the jaw manipulators independently of the main tentacle propulsion and sensing poses.
 - Soften distal tentacle springs during swimming and sensing, and propagate propulsion opening/contraction from root to tip without resetting particle velocity.
-- Stagger close world-space patrols and retain a distant patrol for depth; rejoin ahead of the nearest route point after avoidance rather than orbiting a missed waypoint. Camera orbit never moves swimmers or their destinations.
 - Group Pause/Resume, Fullscreen and the public GitHub link in one responsive top-right control cluster.
 - Publish as `danieljohnmorris/matrix-squids`, with a Node-to-nginx container build for `matrix-squids.danieljohnmorris.com`.
 

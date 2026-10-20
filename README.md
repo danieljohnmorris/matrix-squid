@@ -14,7 +14,21 @@ Each Sentinel has a sculpted mechanical head, fifteen segmented tentacles, artic
 - **Propel:** tentacles spread and contract progressively from root to tip, producing a short burst of speed while retaining inertia.
 - **Sense:** the swimmer slows to a stop, looks around and deploys sensor probes and dishes; the tentacles settle rather than rotating rigidly with the head.
 
-Swimmers follow world-space routes with collision-avoidance steering. Staggered close passes and distant patrols provide depth; orbiting the camera does not reposition the swarm. Grey fog softens the distance, while directional lights and neutral environment reflections reveal the metal. Subdued red running lights follow the simulated tentacle segments.
+Swimmers independently choose changing 3D destinations rather than following closed patrol loops. Collision-avoidance steering and an eight-unit minimum turn radius preserve broad turns and trailing tentacle inertia. Near and distant roaming volumes provide depth; approaching their limits bends a swimmer back inward without snapping or teleporting. Squid can leave the frame and return—the screen edges are not walls, and orbiting the camera does not move their world-space limits.
+
+Population scales with viewport width, including fullscreen and live resizing:
+
+| Viewport width (CSS pixels) | Squid |
+| --- | --- |
+| Below 640 | 4 |
+| 640–1199 | 6 |
+| 1200–1919 | 8 |
+| 1920–2999 | 12 |
+| 3000 and above | 16 |
+
+Roaming width also follows the viewport aspect ratio, spreading the swarm across ultrawide displays while keeping portrait roaming narrower. Existing swimmers retain their positions when resizing; they steer gradually into the updated volumes. Removed swimmers release their procedural geometry and materials; new swimmers share the existing baked metal maps.
+
+Grey fog softens the distance, while directional lights and neutral environment reflections reveal the metal. Subdued red running lights follow the simulated tentacle segments.
 
 Tentacle vertebrae, collars, joint caps and claws use darker gunmetal than the head hardware, retaining lighting-driven highlights without continuous silver bands.
 
