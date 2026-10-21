@@ -4,12 +4,46 @@ import * as THREE from 'three';
 import { createSwimMotion } from './swim-motion.js';
 import { createSentinel } from './sentinel-model.js';
 import { createCameraPass } from './camera-pass.js';
+import { createFlockSteering } from './flock-motion.js';
 
 function swimmer(x, z) {
   const group = new THREE.Group();
   group.position.set(x, 0, z);
   return { group, motion: { flare: 0, sensing: 0 }, swim: createSwimMotion(group.position, () => 0) };
 }
+
+test('flocking separates close neighbours and steers toward more distant neighbours', () => {
+  const flock = createFlockSteering(2);
+  const swarm = [swimmer(0, 0), swimmer(5, 0)];
+  for (const sentinel of swarm) sentinel.swim.rotation.identity();
+  flock.update(swarm);
+  assert.ok(flock.directions[0].x < 0);
+  assert.ok(flock.directions[1].x > 0);
+
+  swarm[1].group.position.x = 20;
+  flock.update(swarm);
+  assert.ok(flock.directions[0].x > 0);
+  assert.ok(flock.directions[1].x < 0);
+
+  swarm[1].group.position.x = 50;
+  flock.update(swarm);
+  assert.ok(flock.directions[0].distanceTo(new THREE.Vector3(0, 0, 1)) < 1e-9);
+});
+
+test('flocking aligns headings and separates coincident swimmers without invalid steering', () => {
+  const flock = createFlockSteering(2);
+  const swarm = [swimmer(0, 0), swimmer(0, 20)];
+  swarm[0].swim.rotation.identity();
+  swarm[1].swim.rotation.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+  flock.update(swarm);
+  assert.ok(flock.directions[0].x > .5, 'Neighbour heading did not influence steering');
+
+  swarm[1].group.position.copy(swarm[0].group.position);
+  swarm[1].swim.rotation.identity();
+  flock.update(swarm);
+  assert.ok(flock.directions[0].x < 0 && flock.directions[1].x > 0);
+  for (const direction of flock.directions) assert.ok(Math.abs(direction.length() - 1) < 1e-9);
+});
 
 test('nearby parallel swimmers coast without a full-tail-radius braking deadlock', () => {
   const swarm = [swimmer(0, 0), swimmer(6, 1)];

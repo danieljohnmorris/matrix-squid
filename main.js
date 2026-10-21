@@ -5,6 +5,7 @@ import { createSwimMotion } from "./swim-motion.js";
 import { applyMetalFinish } from "./metal-finish.js";
 import { createAtmosphere } from "./atmosphere.js";
 import { createCameraPass } from "./camera-pass.js";
+import { createFlockSteering } from "./flock-motion.js";
 // Omarchy's screensaver host loads ?screensaver: no controls, cursor or orbiting.
 const screensaver = new URLSearchParams(location.search).has("screensaver");
 document.documentElement.classList.toggle("screensaver", screensaver);
@@ -25,9 +26,30 @@ document.addEventListener("fullscreenchange", () => {
   fullscreen.title = label;
   fullscreen.setAttribute("aria-pressed", String(active));
 });
+if (!screensaver) {
+  let idleTimer;
+  const activityEvents = ["pointermove", "pointerdown", "pointerup", "wheel", "keydown", "focusin"];
+  function showControls() {
+    document.documentElement.classList.remove("ui-idle");
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => document.documentElement.classList.add("ui-idle"), 3000);
+  }
+  for (const event of activityEvents) window.addEventListener(event, showControls, { passive: true });
+  showControls();
+  window.addEventListener("pagehide", () => {
+    clearTimeout(idleTimer);
+    for (const event of activityEvents) window.removeEventListener(event, showControls);
+  }, { once: true });
+}
 function mountSentinels() {
   const host = document.getElementById("sentinel-background");
   const button = document.getElementById("sentinel-motion");
+  const population = document.getElementById("squid-population");
+  const countInput = document.getElementById("squid-count");
+  const countValue = document.getElementById("squid-count-value");
+  const pathButton = document.getElementById("sentinel-pathing");
+  const flock = createFlockSteering(Number(countInput.max));
+  let flocking = false;
   if (!host || !button || host.dataset.mounted)
     return;
   host.dataset.mounted = "true";
@@ -66,6 +88,7 @@ function mountSentinels() {
   const middleVolume = new THREE.Box3();
   const view = { aspect: window.innerWidth / window.innerHeight };
   const swarm = [];
+  let selectedCount = null;
   const metalFinish = applyMetalFinish(scene, renderer, () => renderer.render(scene, camera));
   function syncSwarm() {
     const width = window.innerWidth;
@@ -77,7 +100,7 @@ function mountSentinels() {
     nearVolume.set(new THREE.Vector3(-nearWidth, -12, -7), new THREE.Vector3(nearWidth, 12, nearFront));
     middleVolume.set(new THREE.Vector3(-23 * spread, -15, -22), new THREE.Vector3(23 * spread, 15, 8));
     farVolume.set(new THREE.Vector3(-24 * spread, -16, -38), new THREE.Vector3(24 * spread, 16, -14));
-    const count = width < 640 ? 4 : width < 1200 ? 6 : width < 1920 ? 8 : width < 3000 ? 12 : 16;
+    const count = selectedCount ?? (width < 640 ? 4 : width < 1200 ? 6 : width < 1920 ? 8 : width < 3000 ? 12 : 16);
     while (swarm.length > count) {
       const sentinel = swarm.pop();
       scene.remove(sentinel.group);
@@ -107,6 +130,8 @@ function mountSentinels() {
       scene.add(sentinel.group);
       swarm.push({ ...sentinel, pass, swim: createSwimMotion(sentinel.group.position, Math.random, heading, volume) });
     }
+    countInput.value = String(count);
+    countValue.value = String(count);
   }
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   let paused = reduced.matches;
@@ -122,6 +147,7 @@ function mountSentinels() {
   function draw() {
     const dt = elapsed - drawnTime;
     drawnTime = elapsed;
+    if (flocking && dt > 0) flock.update(swarm);
     swarm.forEach((sentinel, i) => {
       const cycle = (elapsed + i * 19.6) % 98;
       const stroke = cycle % 30;
@@ -134,7 +160,9 @@ function mountSentinels() {
       const sinceRelease = (cycle + 2) % 98;
       const releaseSurge = 3.4 * smooth(0, 1.4, sinceRelease) * Math.exp(-Math.max(0, sinceRelease - 1.4) * .95) * (1 - smooth(6, 8, sinceRelease));
       const speed = (0.85 + surge) * (braking + departing) + releaseSurge;
-      sentinel.swim.advance(dt, speed, swarm, sentinel, sentinel.pass?.update(elapsed));
+      sentinel.swim.advance(dt, speed, swarm, sentinel,
+        flocking ? null : sentinel.pass?.update(elapsed),
+        flocking ? flock.directions[i] : null);
       const scanTime = Math.max(0, Math.min(3.999, cycle - 92));
       const gazeIndex = Math.min(4, Math.floor(scanTime / .8));
       const gazeBlend = smooth(0, .65, scanTime - gazeIndex * .8);
@@ -163,6 +191,17 @@ function mountSentinels() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     syncSwarm();
     draw();
+  }
+  function changePopulation() {
+    selectedCount = countInput.valueAsNumber;
+    syncSwarm();
+    draw();
+  }
+  function changePathing() {
+    flocking = !flocking;
+    pathButton.textContent = flocking ? "Path: Flocking" : "Path: Independent";
+    pathButton.setAttribute("aria-pressed", String(flocking));
+    pathButton.title = flocking ? "Switch to independent pathing" : "Switch to flocking pathing";
   }
   function tick(now) {
     frame = requestAnimationFrame(tick);
@@ -196,15 +235,21 @@ function mountSentinels() {
     paused = true;
     syncMotion();
     button.hidden = true;
+    population.hidden = true;
+    pathButton.hidden = true;
     document.getElementById("status").textContent = "Graphics connection lost. Reload to resume.";
   }
   button.hidden = false;
   button.addEventListener("click", toggle);
+  countInput.addEventListener("input", changePopulation);
+  pathButton.hidden = false;
+  pathButton.addEventListener("click", changePathing);
   window.addEventListener("resize", resize);
   document.addEventListener("visibilitychange", syncMotion);
   reduced.addEventListener("change", preference);
   renderer.domElement.addEventListener("webglcontextlost", contextLost);
   resize();
+  population.hidden = false;
   syncMotion();
   window.addEventListener("pagehide", () => {
     cancelAnimationFrame(frame);
@@ -212,6 +257,8 @@ function mountSentinels() {
     document.removeEventListener("visibilitychange", syncMotion);
     reduced.removeEventListener("change", preference);
     button.removeEventListener("click", toggle);
+    countInput.removeEventListener("input", changePopulation);
+    pathButton.removeEventListener("click", changePathing);
     renderer.domElement.removeEventListener("webglcontextlost", contextLost);
     controls.dispose();
     disposeMeshes(scene);

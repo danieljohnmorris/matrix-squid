@@ -65,12 +65,13 @@ export function createSwimMotion(position, random = Math.random, heading = null,
     remaining = 20 + random() * 20;
   }
 
-  function advance(dt, speed, neighbours = [], self = null, destination = null) {
+  function advance(dt, speed, neighbours = [], self = null, destination = null, steering = null) {
     if (dt <= 0 || speed <= 0) return;
     direction.copy(forward).applyQuaternion(rotation);
     // Retire a destination before it becomes a point to circle around.
-    if (!destination && (remaining <= 0 || position.distanceToSquared(target) < 100)) chooseTarget();
-    desired.subVectors(destination ?? target, position).normalize();
+    if (!destination && !steering && (remaining <= 0 || position.distanceToSquared(target) < 100)) chooseTarget();
+    if (steering) desired.copy(steering);
+    else desired.subVectors(destination ?? target, position).normalize();
     // Staged passes have their own approach and retreat destinations. Applying
     // the roaming lookahead here would turn them away before they got close.
     if (!destination) {

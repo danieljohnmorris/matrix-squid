@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add a live 1–50 squid slider, retaining the responsive default population until adjusted and preserving manual selection through resizing and fullscreen.
+- Add an Independent / Flocking pathing toggle with boids alignment, cohesion and separation; retain broad turns, avoidance, tentacle trails and swimming animations.
+- Fade scene controls and the interaction hint after three seconds of inactivity; restore them on interaction and keep keyboard-focused controls visible.
 - Ship the repository as an Omarchy shell plugin (`io.github.danieljohnmorris.matrix-squid`): a service starts a fullscreen WebKitGTK screensaver per monitor at the `idle.screensaver` deadline, honours stay awake, the screensaver toggle and lock, exits on input, and adds `omarchy-shell matrix-squid launch`. `?screensaver` hides controls and the cursor and disables orbiting; metal textures resolve against the build base.
 
 - Darken the procedural clouds to subtle charcoal and separate their colour from black distance extinction, preventing far squid from becoming bright grey cut-outs; refresh the README image to match.
