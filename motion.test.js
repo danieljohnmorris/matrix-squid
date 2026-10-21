@@ -27,7 +27,7 @@ test('flocking separates close neighbours and steers toward more distant neighbo
 
   swarm[1].group.position.x = 50;
   flock.update(swarm);
-  assert.ok(flock.directions[0].distanceTo(new THREE.Vector3(0, 0, 1)) < 1e-9);
+  assert.ok(flock.directions[0].x > 0, 'A distant straggler did not steer back toward the school');
 });
 
 test('flocking aligns headings and separates coincident swimmers without invalid steering', () => {
@@ -43,6 +43,45 @@ test('flocking aligns headings and separates coincident swimmers without invalid
   flock.update(swarm);
   assert.ok(flock.directions[0].x < 0 && flock.directions[1].x > 0);
   for (const direction of flock.directions) assert.ok(Math.abs(direction.length() - 1) < 1e-9);
+});
+
+test('scattered swimmers form a moving school instead of avoiding each other’s trailing tentacles', () => {
+  let seed = 17;
+  const random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 4294967296);
+  const bounds = new THREE.Box3(new THREE.Vector3(-23, -15, -22), new THREE.Vector3(23, 15, 18));
+  const swarm = Array.from({ length: 8 }, (_, i) => {
+    const group = new THREE.Group();
+    group.position.set((random() - .5) * 46, (random() - .5) * 30, random() * 40 - 22);
+    const heading = new THREE.Vector3(i % 2 ? -.7 : .7, (i % 3 - 1) * .3, i % 3 === 1 ? .7 : -.7).normalize();
+    return { group, motion: { flare: .5, sensing: 0 }, swim: createSwimMotion(group.position, random, heading, bounds) };
+  });
+  const flock = createFlockSteering(swarm.length);
+  const center = new THREE.Vector3();
+  const meanHeading = new THREE.Vector3();
+  const heading = new THREE.Vector3();
+  const previous = new THREE.Vector3();
+  let travelled = 0;
+  for (let frame = 0; frame < 3600; frame++) {
+    flock.update(swarm, bounds);
+    for (const [i, sentinel] of swarm.entries()) {
+      previous.copy(sentinel.group.position);
+      sentinel.swim.advance(1 / 30, 2, swarm, sentinel, null, flock.directions[i], bounds);
+      travelled += previous.distanceTo(sentinel.group.position);
+      assert.ok(bounds.distanceToPoint(sentinel.group.position) < 8, 'School escaped its roaming area');
+    }
+    if (frame < 900 || frame % 300) continue;
+    center.set(0, 0, 0);
+    meanHeading.set(0, 0, 0);
+    for (const sentinel of swarm) {
+      center.add(sentinel.group.position);
+      meanHeading.add(heading.set(0, 0, 1).applyQuaternion(sentinel.swim.rotation));
+    }
+    center.divideScalar(swarm.length);
+    const radius = Math.sqrt(swarm.reduce((sum, sentinel) => sum + sentinel.group.position.distanceToSquared(center), 0) / swarm.length);
+    assert.ok(radius < 12, `School scattered to a radius of ${radius}`);
+    assert.ok(meanHeading.length() / swarm.length > .7, 'School stopped swimming in a shared direction');
+  }
+  assert.ok(travelled / swarm.length > 200, 'Tentacle avoidance stalled the school');
 });
 
 test('nearby parallel swimmers coast without a full-tail-radius braking deadlock', () => {

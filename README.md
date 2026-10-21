@@ -14,13 +14,13 @@ Each Sentinel has a sculpted mechanical head, fifteen segmented tentacles, artic
 - **Propel:** tentacles spread and contract progressively from root to tip, producing a short burst of speed while retaining inertia.
 - **Sense:** the swimmer slows to a stop, looks around and deploys sensor probes and dishes; the tentacles settle rather than rotating rigidly with the head.
 
-By default, swimmers independently choose changing 3D destinations rather than following closed patrol loops. Switch **Path: Independent / Flocking** to use boids steering: nearby squid align their headings, gather toward neighbours and separate when too close. Flocking replaces individual destinations and camera passes without resetting positions or changing the coast, propel and sense animation.
+By default, swimmers independently choose changing 3D destinations rather than following closed patrol loops. Use the **pathing icon** to switch to boids flocking: squid align their headings, gather into a school and separate when too close. Flocking uses one shared roaming volume and a faster cruising pace, replacing individual destinations and camera passes without resetting positions or changing the coast, propel and sense animation.
 
-Both pathing modes retain collision-avoidance steering and an eight-unit minimum turn radius, preserving broad turns and trailing tentacle inertia. Near and distant roaming volumes provide depth; approaching their limits bends a swimmer back inward without snapping or teleporting. Squid can leave the frame and return—the screen edges are not walls, and orbiting the camera does not move their world-space limits.
+Both pathing modes retain an eight-unit minimum turn radius, preserving broad turns and trailing tentacle inertia. Independent mode avoids swept tentacle trails; flocking uses boids separation instead, allowing neighbours to swim alongside each other without collision braking breaking up the school. Near and distant roaming volumes provide depth; approaching their limits bends a swimmer back inward without snapping or teleporting. Squid can leave the frame and return—the screen edges are not walls, and orbiting the camera does not move their world-space limits.
 
 Foreground swimmers also make staggered, randomized approach-and-retreat passes through the initial camera view. One starts facing forward; later passes blend back into independent roaming. Approach destinations account for perspective and portrait aspect ratios, while avoidance can still divert a pass and squid can naturally leave the frame. Orbiting does not make the swarm chase the camera.
 
-The **Squid** slider selects **1–50** swimmers and keeps that selection through resizing and fullscreen. Until the slider is adjusted, population scales automatically with viewport width:
+The **Squid** dropdown selects **1–50** swimmers and keeps that selection through resizing and fullscreen. Until the dropdown is adjusted, population scales automatically with viewport width:
 
 | Viewport width (CSS pixels) | Squid |
 | --- | --- |
@@ -46,8 +46,8 @@ The six small underside manipulators are separate hinged tools: flattened links,
 | --- | --- |
 | Drag | Orbit the camera |
 | Scroll or pinch | Zoom |
-| Squid slider | Set the population from 1 to 50 |
-| Path: Independent / Flocking | Switch between individual roaming and boids flocking |
+| Squid dropdown | Set the population from 1 to 50 |
+| Pathing icon: scattered / aligned arrows | Switch between independent roaming and boids flocking |
 | Pause / play icon | Pause or resume the animation |
 | Fullscreen icon | Enter or exit fullscreen, where supported |
 | GitHub icon | Open this repository |

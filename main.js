@@ -46,9 +46,10 @@ function mountSentinels() {
   const button = document.getElementById("sentinel-motion");
   const population = document.getElementById("squid-population");
   const countInput = document.getElementById("squid-count");
-  const countValue = document.getElementById("squid-count-value");
   const pathButton = document.getElementById("sentinel-pathing");
-  const flock = createFlockSteering(Number(countInput.max));
+  const maxCount = 50;
+  for (let count = 1; count <= maxCount; count++) countInput.add(new Option(String(count), String(count)));
+  const flock = createFlockSteering(maxCount);
   let flocking = false;
   if (!host || !button || host.dataset.mounted)
     return;
@@ -86,6 +87,7 @@ function mountSentinels() {
   const nearVolume = new THREE.Box3();
   const farVolume = new THREE.Box3();
   const middleVolume = new THREE.Box3();
+  const flockVolume = new THREE.Box3();
   const view = { aspect: window.innerWidth / window.innerHeight };
   const swarm = [];
   let selectedCount = null;
@@ -100,6 +102,7 @@ function mountSentinels() {
     nearVolume.set(new THREE.Vector3(-nearWidth, -12, -7), new THREE.Vector3(nearWidth, 12, nearFront));
     middleVolume.set(new THREE.Vector3(-23 * spread, -15, -22), new THREE.Vector3(23 * spread, 15, 8));
     farVolume.set(new THREE.Vector3(-24 * spread, -16, -38), new THREE.Vector3(24 * spread, 16, -14));
+    flockVolume.copy(middleVolume).union(nearVolume);
     const count = selectedCount ?? (width < 640 ? 4 : width < 1200 ? 6 : width < 1920 ? 8 : width < 3000 ? 12 : 16);
     while (swarm.length > count) {
       const sentinel = swarm.pop();
@@ -131,7 +134,6 @@ function mountSentinels() {
       swarm.push({ ...sentinel, pass, swim: createSwimMotion(sentinel.group.position, Math.random, heading, volume) });
     }
     countInput.value = String(count);
-    countValue.value = String(count);
   }
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   let paused = reduced.matches;
@@ -147,7 +149,7 @@ function mountSentinels() {
   function draw() {
     const dt = elapsed - drawnTime;
     drawnTime = elapsed;
-    if (flocking && dt > 0) flock.update(swarm);
+    if (flocking && dt > 0) flock.update(swarm, flockVolume);
     swarm.forEach((sentinel, i) => {
       const cycle = (elapsed + i * 19.6) % 98;
       const stroke = cycle % 30;
@@ -159,10 +161,11 @@ function mountSentinels() {
       const surge = 3.4 * smooth(26.8, 28.2, stroke) * Math.exp(-Math.max(0, stroke - 28.2) * .95) * (1 - smooth(29, 30, stroke));
       const sinceRelease = (cycle + 2) % 98;
       const releaseSurge = 3.4 * smooth(0, 1.4, sinceRelease) * Math.exp(-Math.max(0, sinceRelease - 1.4) * .95) * (1 - smooth(6, 8, sinceRelease));
-      const speed = (0.85 + surge) * (braking + departing) + releaseSurge;
+      const speed = ((flocking ? 2 : .85) + surge) * (braking + departing) + releaseSurge;
       sentinel.swim.advance(dt, speed, swarm, sentinel,
         flocking ? null : sentinel.pass?.update(elapsed),
-        flocking ? flock.directions[i] : null);
+        flocking ? flock.directions[i] : null,
+        flocking ? flockVolume : undefined);
       const scanTime = Math.max(0, Math.min(3.999, cycle - 92));
       const gazeIndex = Math.min(4, Math.floor(scanTime / .8));
       const gazeBlend = smooth(0, .65, scanTime - gazeIndex * .8);
@@ -193,15 +196,14 @@ function mountSentinels() {
     draw();
   }
   function changePopulation() {
-    selectedCount = countInput.valueAsNumber;
+    selectedCount = Number(countInput.value);
     syncSwarm();
     draw();
   }
   function changePathing() {
     flocking = !flocking;
-    pathButton.textContent = flocking ? "Path: Flocking" : "Path: Independent";
     pathButton.setAttribute("aria-pressed", String(flocking));
-    pathButton.title = flocking ? "Switch to independent pathing" : "Switch to flocking pathing";
+    pathButton.title = flocking ? "Flocking — switch to independent" : "Independent — switch to flocking";
   }
   function tick(now) {
     frame = requestAnimationFrame(tick);
@@ -241,7 +243,7 @@ function mountSentinels() {
   }
   button.hidden = false;
   button.addEventListener("click", toggle);
-  countInput.addEventListener("input", changePopulation);
+  countInput.addEventListener("change", changePopulation);
   pathButton.hidden = false;
   pathButton.addEventListener("click", changePathing);
   window.addEventListener("resize", resize);
@@ -257,7 +259,7 @@ function mountSentinels() {
     document.removeEventListener("visibilitychange", syncMotion);
     reduced.removeEventListener("change", preference);
     button.removeEventListener("click", toggle);
-    countInput.removeEventListener("input", changePopulation);
+    countInput.removeEventListener("change", changePopulation);
     pathButton.removeEventListener("click", changePathing);
     renderer.domElement.removeEventListener("webglcontextlost", contextLost);
     controls.dispose();

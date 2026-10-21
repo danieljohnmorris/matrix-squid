@@ -65,7 +65,7 @@ export function createSwimMotion(position, random = Math.random, heading = null,
     remaining = 20 + random() * 20;
   }
 
-  function advance(dt, speed, neighbours = [], self = null, destination = null, steering = null) {
+  function advance(dt, speed, neighbours = [], self = null, destination = null, steering = null, bounds = volume) {
     if (dt <= 0 || speed <= 0) return;
     direction.copy(forward).applyQuaternion(rotation);
     // Retire a destination before it becomes a point to circle around.
@@ -77,16 +77,19 @@ export function createSwimMotion(position, random = Math.random, heading = null,
     if (!destination) {
       offset.copy(position).addScaledVector(direction, 12);
       for (const axis of axes) {
-        if (offset[axis] < volume.min[axis]) desired[axis] += Math.min(2, (volume.min[axis] - offset[axis]) / 8);
-        if (offset[axis] > volume.max[axis]) desired[axis] -= Math.min(2, (offset[axis] - volume.max[axis]) / 8);
+        if (offset[axis] < bounds.min[axis]) desired[axis] += Math.min(2, (bounds.min[axis] - offset[axis]) / 8);
+        if (offset[axis] > bounds.max[axis]) desired[axis] -= Math.min(2, (offset[axis] - bounds.max[axis]) / 8);
       }
     }
     avoid.set(0, 0, 0);
     let travel = speed * dt;
     const ownRadius = envelopeRadius(self);
-    for (let i = 0; i < ownPoints.length; i++) sample(i * 3.3, ownPoints[i]);
+    // Boids already supplies neighbour separation. Applying swept-trail
+    // avoidance as well breaks alignment and can brake the school to a halt.
+    const clearanceRange = 12;
+    if (!steering) for (let i = 0; i < ownPoints.length; i++) sample(i * 3.3, ownPoints[i]);
     let nearest = Infinity;
-    for (const other of neighbours) {
+    if (!steering) for (const other of neighbours) {
       if (other === self) continue;
       const radius = ownRadius + envelopeRadius(other);
       // Reject distant pairs before comparing their curved trail capsules.
@@ -105,12 +108,12 @@ export function createSwimMotion(position, random = Math.random, heading = null,
       const distance = Math.sqrt(distanceSq);
       const clearance = distance - radius;
       nearest = Math.min(nearest, clearance);
-      if (clearance >= 12) continue;
+      if (clearance >= clearanceRange) continue;
       if (distance > .0001) offset.divideScalar(distance);
       else offset.subVectors(position, other.group.position).normalize();
-      const weight = THREE.MathUtils.clamp((12 - clearance) / 12, 0, 1);
+      const weight = THREE.MathUtils.clamp((clearanceRange - clearance) / clearanceRange, 0, 1);
       avoid.addScaledVector(offset, weight * weight * 4);
-      if (volume.max.x - volume.min.x < volume.max.y - volume.min.y) side.set(0, -direction.z, direction.y);
+      if (bounds.max.x - bounds.min.x < bounds.max.y - bounds.min.y) side.set(0, -direction.z, direction.y);
       else side.set(direction.z, 0, -direction.x);
       if (side.lengthSq() < .01) side.set(1, 0, 0);
       avoid.addScaledVector(side.normalize(), weight * .6);
@@ -122,7 +125,7 @@ export function createSwimMotion(position, random = Math.random, heading = null,
     targetRotation.setFromUnitVectors(direction, desired).multiply(rotation);
     // Curvature, not a fixed angular speed: slowing down cannot tighten a turn.
     // Inside an existing overlap, a slow escape yaw avoids a permanent deadlock.
-    const turn = travel / 8 + (nearest < 0 ? dt * .08 : 0);
+    const turn = travel / (steering ? 4 : 8) + (nearest < 0 ? dt * .08 : 0);
     rotation.rotateTowards(targetRotation, turn);
     direction.copy(forward).applyQuaternion(rotation);
     position.addScaledVector(direction, travel);

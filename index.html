@@ -16,11 +16,10 @@
     .controls > *:hover { border-color: #ffffff70; }
     .controls > *:focus-visible { outline: 2px solid #d5dce5; outline-offset: 4px; }
     .controls > [hidden] { display: none; }
-    .controls .population:not([hidden]) { display: flex; gap: 10px; width: 260px; max-width: 100%; padding: 0 12px; font-size: 13px; cursor: default; }
-    .population input { flex: 1; min-width: 0; height: 42px; margin: 0; accent-color: #d5dce5; cursor: pointer; }
-    .population input:focus-visible { outline: 2px solid #d5dce5; outline-offset: 2px; }
-    .population output { min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; }
-    .controls .pathing { width: 156px; padding: 0 12px; font: inherit; font-size: 13px; }
+    .controls .population:not([hidden]) { display: flex; gap: 6px; width: auto; padding: 0 10px; font-size: 13px; cursor: default; }
+    .population select { height: 42px; border: 0; background: transparent; color: inherit; font: inherit; font-variant-numeric: tabular-nums; cursor: pointer; }
+    .population select:focus-visible { outline: 2px solid #d5dce5; outline-offset: 2px; }
+    .population option { background: #080b10; }
     .controls svg { display: block; width: 20px; height: 20px; pointer-events: none; }
     .controls .icon-active, .controls [aria-pressed="true"] .icon-default { display: none; }
     .controls [aria-pressed="true"] .icon-active { display: block; }
@@ -41,10 +40,14 @@
   <nav class="controls" aria-label="Scene controls">
     <div class="population" id="squid-population" hidden>
       <label for="squid-count">Squid</label>
-      <input id="squid-count" type="range" min="1" max="50" step="1" aria-describedby="squid-count-value" />
-      <output id="squid-count-value" for="squid-count" aria-live="off"></output>
+      <select id="squid-count" title="Number of squid"></select>
     </div>
-    <button id="sentinel-pathing" class="pathing" type="button" aria-label="Flocking pathing" aria-pressed="false" title="Switch to flocking pathing" hidden>Path: Independent</button>
+    <button id="sentinel-pathing" type="button" aria-label="Flocking pathing" aria-pressed="false" title="Independent — switch to flocking" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <g class="icon-default"><path d="M9 9 4 4m0 0v5m0-5h5M15 9l5-5m0 0h-5m5 0v5M12 14v7m0 0-3-3m3 3 3-3" /></g>
+        <g class="icon-active"><path d="M5 19V9m0 0-3 3m3-3 3 3M12 15V5m0 0L9 8m3-3 3 3M19 19V9m0 0-3 3m3-3 3 3" /></g>
+      </svg>
+    </button>
     <button id="sentinel-motion" type="button" aria-label="Pause sentinels" title="Pause sentinels" aria-pressed="false" hidden>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
         <g class="icon-default"><path d="M8 5v14M16 5v14" stroke-width="3" /></g>
